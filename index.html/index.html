@@ -3,222 +3,2542 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-<title>양품화 소테이블</title>
+<title>양품화 작업</title>
 <style>
-  :root { --accent:#2563eb; --border:#e2e2e6; --text:#1a1a1a; --text-sub:#6b7280; --bg:#f5f5f7; }
-  * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
-  header { background:#1a1a2e; color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
-  header .title { font-size:16px; font-weight:700; }
-  header .sub-id { background:var(--accent); padding:4px 12px; border-radius:8px; font-size:14px; font-weight:700; }
-  .container { flex:1; max-width:500px; margin:0 auto; padding:20px; width:100%; }
+  :root {
+    --color-3f: #e8f7f3;
+    --color-3f-border: #4fb8a0;
+    --color-2f: #eef6e8;
+    --color-2f-border: #7cb342;
+    --bg: #f4f5f7;
+    --card: #ffffff;
+    --text: #1a1a1a;
+    --text-sub: #666;
+    --border: #ddd;
+    --accent: #2563eb;
+    --danger: #dc2626;
+    --warn: #d97706;
+    --ok: #16a34a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    padding-bottom: 40px;
+  }
+  header {
+    background: #1a1a2e;
+    color: #fff;
+    padding: 14px 16px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  header .title { font-size: 16px; font-weight: 600; }
+  header .table-badge {
+    font-size: 13px;
+    background: rgba(255,255,255,0.15);
+    padding: 4px 10px;
+    border-radius: 20px;
+    cursor: pointer;
+  }
+  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
 
-  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
-  .status-dot.live { background:#22c55e; animation:pulse 1.5s infinite; }
-  .status-dot.off { background:#d1d5db; }
-  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
-  .status-text { font-size:11px; color:#aaa; }
+  /* 테이블 선택 화면 */
+  .table-select-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    margin-top: 12px;
+  }
+  .floor-label {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-sub);
+    margin: 18px 0 8px;
+  }
+  .table-btn {
+    padding: 18px 0;
+    border-radius: 12px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .table-btn.floor3 { background: var(--color-3f); border-color: var(--color-3f-border); }
+  .table-btn.floor2 { background: var(--color-2f); border-color: var(--color-2f-border); }
 
-  .waiting { text-align:center; padding:60px 20px; }
-  .waiting-icon { font-size:60px; margin-bottom:16px; }
-  .waiting-title { font-size:18px; font-weight:600; margin-bottom:8px; }
-  .waiting-desc { font-size:14px; color:var(--text-sub); }
+  /* 스캔 화면 */
+  .scan-box {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 14px;
+  }
+  .scan-box input {
+    width: 100%;
+    font-size: 18px;
+    padding: 14px;
+    border: 2px solid var(--accent);
+    border-radius: 10px;
+    text-align: center;
+  }
+  .scan-hint { font-size: 12px; color: var(--text-sub); text-align: center; margin-top: 8px; }
 
-  .card { background:#fff; border-radius:16px; border:1px solid var(--border); overflow:hidden; }
-  .card-color-bar { height:12px; }
-  .card-color-bar.c-white { background:#e0e0e0; }
-  .card-color-bar.c-green { background:#7cb342; }
-  .card-color-bar.c-orange { background:#ff9a52; }
-  .card-body { padding:20px; }
-  .card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
-  .card-sku { font-size:22px; font-weight:800; margin-bottom:4px; }
-  .card-option { font-size:14px; color:var(--text-sub); word-break:keep-all; }
-  .card-cat { display:inline-block; font-size:12px; background:#eef2ff; color:#3730a3; padding:2px 8px; border-radius:8px; margin-bottom:12px; }
-  .btn-photo { flex-shrink:0; background:#2563eb; color:#fff; text-decoration:none; font-size:14px; font-weight:700; padding:10px 16px; border-radius:10px; white-space:nowrap; box-shadow:0 2px 6px rgba(37,99,235,0.3); }
-  .btn-photo:active { transform:scale(0.97); }
-  .btn-photo.disabled { opacity:0.4; pointer-events:none; }
+  /* ===== 소테이블 슬롯 ===== */
+  .sub-table-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .sub-slot { padding: 10px 4px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
+  .sub-slot.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+  .sub-slot:active { transform: scale(0.97); }
 
-  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
-  .info-box { background:var(--bg); border-radius:12px; padding:14px; text-align:center; }
-  .info-label { font-size:12px; color:var(--text-sub); margin-bottom:4px; }
-  .info-value { font-size:24px; font-weight:800; }
+  .today-stat {
+    display: flex;
+    justify-content: space-between;
+    font-size: 13px;
+    color: var(--text-sub);
+    background: #fff;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+  }
+  .today-stat b { color: var(--text); }
 
-  .bag-color-block { border-radius:12px; padding:16px; text-align:center; margin-bottom:16px; }
-  .bag-color-block.c-white { background:#ffffff; border:2px solid #ccc; color:#333; }
-  .bag-color-block.c-green { background:#7cb342; color:#fff; }
-  .bag-color-block.c-orange { background:#ff9a52; color:#fff; }
-  .bag-color-name { font-size:20px; font-weight:700; }
-  .bag-color-sub { font-size:13px; opacity:0.8; }
+  /* 결과 카드 */
+  .result-card {
+    background: var(--card);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 14px;
+  }
+  .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .result-header .sku { font-weight: 700; font-size: 16px; }
+  .result-header .option { font-size: 13px; color: var(--text-sub); }
 
-  .scan-time { text-align:center; font-size:12px; color:var(--text-sub); margin-top:12px; }
+  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .badge {
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    font-weight: 600;
+  }
+  .badge.wanpoly { background: #fff3cd; color: #856404; }
+  .badge.new { background: #fde8e8; color: var(--danger); }
+  .badge.defect1 { background: #fff3cd; color: #856404; }
+  .badge.defect2 { background: #ffe0cc; color: #b45309; }
+  .badge.defect3 { background: #fde2e2; color: #b91c1c; }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+  .info-cell {
+    border-radius: 10px;
+    padding: 10px 12px;
+  }
+  .info-cell .label { font-size: 11px; opacity: 0.75; margin-bottom: 2px; }
+  .info-cell .value { font-size: 15px; font-weight: 600; }
+  .info-cell.bag-clear { background: #f0f0f0; color: #555; }
+  .info-cell.bag-green { background: #e8f5e0; color: #2e5c1a; }
+  .info-cell.bag-orange { background: #ffe9d6; color: #a3520a; }
+  .info-cell.neutral { background: #f5f5f7; color: var(--text); }
+
+  .pcs-highlight {
+    background: #e7f0ff;
+    color: #1e40af;
+    border-radius: 10px;
+    padding: 14px;
+    margin-bottom: 14px;
+    text-align: center;
+  }
+  .pcs-highlight .label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
+  .pcs-highlight .value { font-size: 26px; font-weight: 700; }
+
+  /* ===== 새 좌우 2분할 결과 레이아웃 ===== */
+  .result-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 12px;
+  }
+  .result-top-left .sku { font-weight: 700; font-size: 16px; }
+  .result-top-left .option { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
+  .btn-confirm {
+    flex-shrink: 0;
+    background: var(--accent);
+    color: #fff;
+    text-decoration: none;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 12px 18px;
+    border-radius: 10px;
+    white-space: nowrap;
+    box-shadow: 0 2px 6px rgba(37,99,235,0.3);
+  }
+  .btn-confirm:active { transform: scale(0.97); }
+
+  .split-layout {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+  .split-left, .split-right {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+  }
+  .split-right { border-left: 1px solid var(--border); padding-left: 12px; }
+
+  .floor-box {
+    align-self: stretch;
+    text-align: center;
+    font-size: 15px;
+    font-weight: 700;
+    padding: 18px 14px;
+    border-radius: 12px;
+    border: 3px solid #ccc;
+    position: relative;
+  }
+  .floor-box .floor-name { font-size: 13px; opacity: 0.85; }
+  .floor-box .bag-name { font-size: 18px; font-weight: 800; margin-top: 4px; }
+  /* 실제 대봉 색을 크게 보여줌: 3층=투명(흰), 2층=초록, 지하=주황(살구) */
+  .floor-box.floor-3f { background: #ffffff; color: #333; border-color: #999; }
+  .floor-box.floor-2f { background: #7cb342; color: #fff; border-color: #5f9230; }
+  .floor-box.floor-b1 { background: #ff9a52; color: #fff; border-color: #e07a2c; }
+
+  .split-info { }
+  .split-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
+  .split-value { font-size: 20px; font-weight: 700; }
+  .split-value.big { font-size: 30px; color: #1e40af; }
+
+  .split-hint { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
+  .split-right-spacer { display: flex; align-items: center; height: 100%; }
+
+  .pcs-adjust { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
+  .pcs-adjust button {
+    width: 44px; height: 44px;
+    border-radius: 10px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 18px;
+  }
+  .pcs-adjust input {
+    flex: 1;
+    text-align: center;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 10px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+  }
+
+  .defect-note {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 14px;
+    font-size: 13px;
+  }
+  .defect-note.sev1 { background: #fff8e1; color: #856404; }
+  .defect-note.sev2 { background: #ffedd5; color: #9a3412; }
+  .defect-note.sev3 { background: #fee2e2; color: #991b1b; }
+
+  .photo-link {
+    display: inline-block;
+    font-size: 13px;
+    color: var(--accent);
+    text-decoration: none;
+    margin-bottom: 14px;
+  }
+
+  .form-group { margin-bottom: 12px; }
+  .form-group label { font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 6px; }
+  select, .form-group input[type=number] {
+    width: 100%;
+    padding: 12px;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 15px;
+  }
+  .poly-btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
+  .poly-btn {
+    padding: 10px 0;
+    border-radius: 8px;
+    border: 1.5px solid var(--border);
+    background: #fff;
+    font-size: 13px;
+  }
+  .poly-btn.selected { border-color: var(--accent); color: var(--accent); border-width: 2px; }
+
+  .new-sku-warning {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff3cd;
+    color: #856404;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 13px;
+    font-weight: 600;
+  }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .btn-secondary {
+    width: 100%;
+    padding: 12px;
+    background: #fff;
+    color: var(--text-sub);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 14px;
+    margin-top: 8px;
+    cursor: pointer;
+  }
+  .btn-wanpoly-done {
+    width: 100%;
+    padding: 16px;
+    background: var(--ok);
+    color: #fff;
+    border: none;
+    border-radius: 10px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .wanpoly-panel { text-align: center; padding: 20px 0; }
+  .wanpoly-panel .icon { font-size: 40px; margin-bottom: 8px; }
+  .wanpoly-panel .msg { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
+  .wanpoly-panel .sub { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; }
+
+  .toast {
+    position: fixed;
+    bottom: 24px; left: 50%;
+    transform: translateX(-50%);
+    background: #1a1a2e;
+    color: #fff;
+    padding: 12px 20px;
+    border-radius: 30px;
+    font-size: 14px;
+    z-index: 200;
+    opacity: 0;
+    transition: opacity 0.25s;
+    pointer-events: none;
+  }
+  .toast.show { opacity: 1; }
+
+  .modal-overlay {
+    position: fixed; inset: 0;
+    background: rgba(0,0,0,0.4);
+    display: none;
+    align-items: flex-end;
+    z-index: 300;
+  }
+  .modal-overlay.show { display: flex; }
+  .modal-sheet {
+    background: #fff;
+    width: 100%;
+    max-width: 480px;
+    margin: 0 auto;
+    border-radius: 16px 16px 0 0;
+    padding: 20px;
+    max-height: 80vh;
+    overflow-y: auto;
+  }
+  .modal-sheet h3 { margin: 0 0 14px; font-size: 16px; }
+
+  .hidden { display: none !important; }
+
+  /* ===== 홈 화면 ===== */
+  .home-menu { display: flex; flex-direction: column; gap: 14px; margin-top: 40px; }
+  .home-btn {
+    background: #fff;
+    border: 2px solid var(--border);
+    border-radius: 16px;
+    padding: 28px 20px;
+    text-align: center;
+    cursor: pointer;
+  }
+  .home-btn.collect { border-color: #d97706; }
+  .home-btn.quality { border-color: var(--accent); }
+  .home-btn-icon { font-size: 40px; margin-bottom: 8px; }
+  .home-btn-title { font-size: 19px; font-weight: 700; margin-bottom: 4px; }
+  .home-btn-desc { font-size: 13px; color: var(--text-sub); }
+
+  /* ===== 재고 배너 ===== */
+  .stock-banner {
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 12px;
+    font-size: 14px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .stock-banner.ok { background: #e8f5e9; color: #2e7d32; }
+  .stock-banner.low { background: #fff3cd; color: #856404; }
+  .stock-banner.zero { background: #fde2e2; color: #b91c1c; }
+
+  .already-banner {
+    background: #eef2ff;
+    color: #3730a3;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 12px;
+    font-size: 13px;
+  }
+
+  .fill-check {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    margin-bottom: 16px;
+    cursor: pointer;
+  }
+  .fill-check input { width: 20px; height: 20px; }
+  .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
+  .label-row label { margin-bottom: 0; }
+  .inline-edit-btn { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 8px; cursor: pointer; }
+
+  /* ===== 데이터 수집 목록 ===== */
+  .collect-priority-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
+  .progress-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+  .progress-bar-bg { flex: 1; height: 8px; background: #e2e2e6; border-radius: 4px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
+  .progress-label { font-size: 12px; color: var(--text-sub); white-space: nowrap; }
+  .prio-tab {
+    flex: 1;
+    padding: 10px 4px;
+    background: #fff;
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--text-sub);
+  }
+  .prio-tab.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+  .prio-tab span { font-size: 11px; opacity: 0.7; }
+
+  .collect-item {
+    background: #fff;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  .collect-item:active { background: #f5f5f7; }
+  .collect-item .ci-left { min-width: 0; }
+  .collect-item .ci-sku { font-weight: 700; font-size: 14px; }
+  .collect-item .ci-sub { font-size: 12px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .collect-item .ci-right { text-align: right; flex-shrink: 0; }
+  .collect-item .ci-loc { font-size: 13px; font-weight: 600; color: var(--accent); }
+  .collect-item .ci-stock { font-size: 12px; color: var(--text-sub); }
+  .collect-empty { text-align: center; color: var(--text-sub); padding: 40px 0; font-size: 14px; }
+  .collect-item.is-done { opacity: 0.5; cursor: default; }
+  .ci-cat { font-size: 11px; background: #eef2ff; color: #3730a3; padding: 1px 6px; border-radius: 8px; font-weight: 500; margin-left: 4px; }
+  .ci-status { margin: 4px 0 2px; display: flex; gap: 6px; }
+  .chk { font-size: 11px; padding: 2px 7px; border-radius: 8px; font-weight: 600; }
+  .chk.done { background: #e8f5e9; color: #2e7d32; }
+  .chk.todo { background: #f0f0f0; color: #999; }
+  .chk.na { background: #f5f5f7; color: #aaa; }
+  .edit-req-btn { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+
+  /* ===== 관리자 화면 ===== */
+  .admin-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+  .admin-tab { flex: 1; padding: 12px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
+  .admin-tab.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+  .admin-filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
+  .admin-filter-btn { padding: 6px 14px; background: #fff; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text-sub); }
+  .admin-filter-btn.active { border-color: var(--accent); color: var(--accent); }
+  .req-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .req-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+  .req-sku { font-size: 16px; font-weight: 700; }
+  .req-time { font-size: 12px; color: var(--text-sub); }
+  .req-change { display: flex; gap: 10px; align-items: center; font-size: 14px; margin: 6px 0; }
+  .req-change .rc-label { color: var(--text-sub); min-width: 60px; }
+  .req-arrow { color: #d97706; font-weight: 700; }
+  .req-reason { font-size: 13px; color: var(--text-sub); margin-top: 8px; padding: 8px; background: #f8f8fa; border-radius: 8px; }
+  .req-actions { display: flex; gap: 8px; margin-top: 12px; }
+  .btn-approve { flex: 1; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  .btn-reject { flex: 1; padding: 10px; background: #fff; color: #b91c1c; border: 1.5px solid #b91c1c; border-radius: 8px; font-weight: 600; cursor: pointer; }
+  .req-status { font-size: 12px; padding: 3px 10px; border-radius: 8px; font-weight: 600; display: inline-block; margin-top: 8px; }
+  .req-status.done { background: #e8f5e9; color: #2e7d32; }
+  .req-status.reject { background: #f0f0f0; color: #999; }
 </style>
 </head>
 <body>
 
 <header>
-  <div>
-    <div class="title">양품화</div>
-    <div style="display:flex; align-items:center; margin-top:4px;">
-      <span class="status-dot live" id="statusDot"></span>
-      <span class="status-text" id="statusText">실시간 연결 중</span>
-    </div>
+  <div class="title" id="headerTitle">양품화</div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <a id="adminLink" href="#" onclick="openAdmin(); return false;" style="color:#aaa; font-size:12px; text-decoration:none; cursor:pointer;">관리자</a>
+    <div class="table-badge" id="homeBadge" onclick="goHome()">🏠 홈</div>
   </div>
-  <div class="sub-id" id="subBadge">-</div>
 </header>
 
 <div class="container">
-  <div id="waitingView" class="waiting">
-    <div class="waiting-icon">📦</div>
-    <div class="waiting-title">대기 중</div>
-    <div class="waiting-desc">스캔 담당자가 상품을 스캔하면<br>여기에 자동으로 표시됩니다</div>
+
+  <!-- ============== 화면 0: 홈(모드 선택) ============== -->
+  <div id="screenHome">
+    <div class="home-menu">
+      <button class="home-btn collect" onclick="enterCollectMode()">
+        <div class="home-btn-icon">📏</div>
+        <div class="home-btn-title">데이터 수집 작업</div>
+        <div class="home-btn-desc">폴리 호수 · 대봉당 최대 pcs 실측 입력</div>
+      </button>
+      <button class="home-btn quality" onclick="enterQualityMode()">
+        <div class="home-btn-icon">📦</div>
+        <div class="home-btn-title">양품화 작업</div>
+        <div class="home-btn-desc">테이블 선택 후 바코드 스캔</div>
+      </button>
+    </div>
   </div>
 
-  <div id="infoView" style="display:none;">
-    <div class="card">
-      <div class="card-color-bar" id="colorBar"></div>
-      <div class="card-body">
-        <div class="card-top">
-          <div>
-            <div class="card-sku" id="tSku">-</div>
-            <div class="card-option" id="tOption">-</div>
-          </div>
-          <a href="#" id="tPhotoLink" class="btn-photo" target="_blank">상품확인</a>
-        </div>
-        <div id="tCatWrap"></div>
+  <!-- ============== 화면 A: 관리자 ============== -->
+  <div id="screenAdmin" class="hidden">
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-atab="requests" onclick="switchAdminTab('requests')">수정요청 확인</button>
+      <button class="admin-tab" data-atab="qr" onclick="switchAdminTab('qr')">QR코드 생성</button>
+      <button class="admin-tab" data-atab="sync" onclick="switchAdminTab('sync')">DB 동기화</button>
+    </div>
 
-        <div class="bag-color-block" id="tBagBlock">
-          <div class="bag-color-name" id="tBagName">-</div>
-          <div class="bag-color-sub" id="tBagSub">-</div>
-        </div>
+    <div id="adminTabRequests">
+      <div class="admin-filter-row">
+        <button class="admin-filter-btn active" data-af="대기" onclick="setAdminFilter('대기')">대기</button>
+        <button class="admin-filter-btn" data-af="완료" onclick="setAdminFilter('완료')">완료</button>
+        <button class="admin-filter-btn" data-af="반려" onclick="setAdminFilter('반려')">반려</button>
+        <button class="admin-filter-btn" data-af="all" onclick="setAdminFilter('all')">전체</button>
+      </div>
+      <div id="adminRequestsArea"><div class="collect-empty">불러오는 중...</div></div>
+    </div>
 
-        <div class="info-grid">
-          <div class="info-box">
-            <div class="info-label">폴리 규격</div>
-            <div class="info-value" id="tPoly">-</div>
-          </div>
-          <div class="info-box">
-            <div class="info-label" id="tPcsLabel">대봉당 pcs</div>
-            <div class="info-value" id="tPcs">-</div>
-          </div>
+    <div id="adminTabQr" class="hidden">
+      <div class="result-card">
+        <div style="font-weight:700; margin-bottom:10px;">소테이블 QR코드 생성</div>
+        <div style="font-size:14px; color:var(--text-sub); margin-bottom:16px;">
+          각 소테이블에 붙일 QR코드를 생성합니다. 작업자가 핸드폰으로 QR을 스캔하면 본인 소테이블 화면에 접속됩니다.
         </div>
+        <button class="btn-primary" onclick="openQrPage()" style="width:100%;">QR코드 생성 페이지 열기</button>
+      </div>
+    </div>
 
-        <div class="info-grid">
-          <div class="info-box">
-            <div class="info-label">로케이션</div>
-            <div class="info-value" style="font-size:16px;" id="tLoc">-</div>
-          </div>
-          <div class="info-box">
-            <div class="info-label">단수</div>
-            <div class="info-value" id="tTier">-</div>
-          </div>
+    <div id="adminTabSync" class="hidden">
+      <div class="result-card">
+        <div style="font-weight:700; margin-bottom:10px;">Supabase DB 동기화</div>
+        <div style="font-size:14px; color:var(--text-sub); line-height:1.7;">
+          현재는 구글 시트를 데이터 원본으로 사용 중입니다. 향후 Supabase로 이관할 때 사용합니다.<br><br>
+          시트 → Supabase 동기화는 <b>스프레드시트 상단 메뉴</b>에서 실행하세요:<br>
+          <b>양품화 동기화 → 전체 동기화(순서대로 실행)</b><br><br>
+          시트 수정 후 작업자 화면에 바로 반영하려면:<br>
+          <b>양품화 동기화 → 시트 조회 캐시 초기화</b>
         </div>
       </div>
     </div>
-    <div class="scan-time" id="tTime">-</div>
+  </div>
+
+  <!-- ============== 화면 1: 테이블 선택 ============== -->
+  <div id="screenTableSelect" class="hidden">
+    <div class="floor-label">3층</div>
+    <div class="table-select-grid" id="grid3f"></div>
+    <div class="floor-label">2층</div>
+    <div class="table-select-grid" id="grid2f"></div>
+  </div>
+
+  <!-- ============== 화면 C: 데이터 수집 목록 ============== -->
+  <div id="screenCollectList" class="hidden">
+    <div class="today-stat">
+      <span id="collectSeasonLabel">데이터 수집</span>
+      <span>오늘 <b id="collectTodayCount">0</b>건 수집</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-bg">
+        <div class="progress-bar-fill" id="progressBarFill"></div>
+      </div>
+      <div class="progress-label" id="progressLabel">전체 0 / 0</div>
+    </div>
+    <div class="collect-priority-tabs">
+      <button class="prio-tab active" data-prio="1" onclick="switchPrio(1)">🔴 1순위 <span id="prioCount1">0</span></button>
+      <button class="prio-tab" data-prio="2" onclick="switchPrio(2)">🟡 2순위 <span id="prioCount2">0</span></button>
+      <button class="prio-tab" data-prio="3" onclick="switchPrio(3)">🟢 3순위 <span id="prioCount3">0</span></button>
+    </div>
+    <div id="collectListArea"></div>
+  </div>
+
+  <!-- ============== 화면 C2: 데이터 수집 입력 ============== -->
+  <div id="screenCollectInput" class="hidden">
+    <div class="result-card">
+      <div class="result-top">
+        <div class="result-top-left">
+          <div class="sku" id="colSku">-</div>
+          <div class="option" id="colOption">-</div>
+        </div>
+        <a href="#" id="colPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
+      </div>
+
+      <!-- 재고 상태 배너 -->
+      <div id="colStockBanner"></div>
+      <!-- 이미 수집됨 배너 -->
+      <div id="colAlreadyBanner"></div>
+
+      <div id="colInputArea">
+        <div class="form-group">
+          <div class="label-row">
+            <label id="colPolyLabel">폴리 규격</label>
+            <button class="inline-edit-btn" id="colPolyEditBtn" onclick="editFromInput('poly')" style="display:none;">수정</button>
+          </div>
+          <div class="poly-btn-row" id="colPolyBtnRow">
+            <button class="poly-btn" data-size="1호">1호</button>
+            <button class="poly-btn" data-size="2호">2호</button>
+            <button class="poly-btn" data-size="3호">3호</button>
+            <button class="poly-btn" data-size="4호">4호</button>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <div class="label-row">
+            <label id="colPcsLabel">대봉당 최대 pcs (실측)</label>
+            <button class="inline-edit-btn" id="colPcsEditBtn" onclick="editFromInput('pcs')" style="display:none;">수정</button>
+          </div>
+          <div class="pcs-adjust">
+            <button onclick="adjustColPcs(-1)">－</button>
+            <input type="number" id="colPcsInput" placeholder="최대 pcs">
+            <button onclick="adjustColPcs(1)">＋</button>
+          </div>
+        </div>
+
+        <button class="btn-primary" onclick="submitCollect()">수집 완료</button>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="backToCollectList()">목록으로 돌아가기</button>
+  </div>
+
+  <!-- ============== 화면 C3: 수정요청 ============== -->
+  <div id="screenEditRequest" class="hidden">
+    <div class="result-card">
+      <div class="result-top">
+        <div class="result-top-left">
+          <div class="sku" id="erSku">-</div>
+          <div class="option" id="erOption">-</div>
+        </div>
+        <a href="#" id="erPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
+      </div>
+
+      <div class="already-banner" id="erCurrentInfo"></div>
+
+      <div class="form-group">
+        <label>폴리 규격 (수정 요청)</label>
+        <div class="poly-btn-row" id="erPolyBtnRow">
+          <button class="poly-btn" data-size="1호">1호</button>
+          <button class="poly-btn" data-size="2호">2호</button>
+          <button class="poly-btn" data-size="3호">3호</button>
+          <button class="poly-btn" data-size="4호">4호</button>
+        </div>
+      </div>
+
+      <div class="form-group" id="erPcsGroup">
+        <label id="erPcsLabel">대봉당 pcs (수정 요청)</label>
+        <div class="pcs-adjust">
+          <button onclick="adjustErPcs(-1)">－</button>
+          <input type="number" id="erPcsInput" placeholder="요청 pcs">
+          <button onclick="adjustErPcs(1)">＋</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>사유 (선택)</label>
+        <input type="text" id="erReasonInput" placeholder="예: 대봉에 더 들어감 / 덜 들어감" style="width:100%; padding:12px; border:1.5px solid var(--border); border-radius:10px; font-size:15px;">
+      </div>
+
+      <button class="btn-primary" onclick="submitEditRequest()">수정요청 제출</button>
+    </div>
+    <button class="btn-secondary" onclick="backToCollectList()">목록으로 돌아가기</button>
+  </div>
+
+  <!-- ============== 화면 2: 스캔 대기 ============== -->
+  <div id="screenScan" class="hidden">
+    <div class="today-stat">
+      <span id="currentTableLabel">-</span>
+      <span>오늘 <b id="todayPcs">0</b> pcs · <b id="todayCount">0</b>건</span>
+    </div>
+    <div class="sub-table-slots" id="subTableSlots"></div>
+    <div class="scan-box">
+      <input type="text" id="barcodeInput" placeholder="소테이블을 먼저 선택하세요" autocomplete="off" disabled>
+      <div class="scan-hint" id="scanHint">소테이블을 선택한 뒤 스캔하세요</div>
+    </div>
+  </div>
+
+  <!-- ============== 화면 3: 완폴리 ============== -->
+  <div id="screenWanpoly" class="hidden">
+    <div class="result-card">
+      <div class="result-header">
+        <div>
+          <div class="sku" id="wpSku">-</div>
+          <div class="option" id="wpOption">-</div>
+        </div>
+      </div>
+      <div class="wanpoly-panel">
+        <div class="icon">📦</div>
+        <div class="msg">완폴리 상품입니다</div>
+        <div class="sub">공급처 사전포장 완료 · 바코드 부착만 진행하세요</div>
+        <button class="btn-wanpoly-done" onclick="submitWanpoly()">바코드 부착 완료</button>
+      </div>
+    </div>
+    <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
+  </div>
+
+  <!-- ============== 화면 4: 스캔 결과(기존 값 있음) ============== -->
+  <div id="screenResult" class="hidden">
+    <div class="result-card">
+      <!-- 상단: 좌(SKU 정보) / 우(상품확인 버튼) -->
+      <div class="result-top">
+        <div class="result-top-left">
+          <div class="sku" id="resSku">-</div>
+          <div class="option" id="resOption">-</div>
+        </div>
+        <a href="#" id="resPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
+      </div>
+
+      <div class="badge-row" id="resBadgeRow"></div>
+
+      <!-- 좌우 2분할 -->
+      <div class="split-layout">
+        <!-- 왼쪽 -->
+        <div class="split-left">
+          <div class="floor-box" id="resFloorBox">
+            <div class="floor-name" id="resFloorName">3층</div>
+            <div class="bag-name" id="resBagName">투명 대봉</div>
+          </div>
+          <div class="split-info">
+            <div class="split-label">폴리 규격</div>
+            <div class="split-value" id="resPolySize">-</div>
+          </div>
+          <div class="split-info">
+            <div class="split-label" id="resTierLabel">대봉당 pcs</div>
+            <div class="split-value big" id="resPcs">-</div>
+          </div>
+        </div>
+        <!-- 오른쪽 -->
+        <div class="split-right">
+          <div id="resDefectNote" class="hidden"></div>
+          <div class="split-right-spacer" id="resRightSpacer">
+            <div class="split-hint">스캔한 상품 정보입니다.<br>값이 맞으면 완료를 눌러주세요.</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" onclick="submitProcessing()">완료</button>
+      <button class="btn-secondary" onclick="openChangeRequest()">이 값이 잘못됐어요 (변경요청)</button>
+    </div>
+    <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
+  </div>
+
+  <!-- ============== 화면 5: 신규 SKU 입력 ============== -->
+  <div id="screenNewSku" class="hidden">
+    <div class="result-card">
+      <div class="result-top">
+        <div class="result-top-left">
+          <div class="sku" id="newSku">-</div>
+          <div class="option" id="newOption">-</div>
+        </div>
+        <a href="#" id="newPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
+      </div>
+
+      <div class="new-sku-warning">⚠️ 신규 SKU · 등록된 값 없음</div>
+
+      <div class="info-grid">
+        <div class="info-cell" id="newBagColorCell">
+          <div class="label">대봉 색상 (자동)</div>
+          <div class="value" id="newBagColor">-</div>
+        </div>
+        <div class="info-cell neutral">
+          <div class="label">기준 단수</div>
+          <div class="value" id="newTier">-</div>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label>폴리 규격 선택</label>
+        <div class="poly-btn-row" id="newPolyBtnRow">
+          <button class="poly-btn" data-size="1호">1호</button>
+          <button class="poly-btn" data-size="2호">2호</button>
+          <button class="poly-btn" data-size="3호">3호</button>
+          <button class="poly-btn" data-size="4호">4호</button>
+        </div>
+      </div>
+
+      <div class="form-group">
+        <label id="newPcsLabel">기준 pcs 직접 입력</label>
+        <div class="pcs-adjust">
+          <button onclick="adjustNewPcs(-1)">－</button>
+          <input type="number" id="newPcsInput" placeholder="pcs">
+          <button onclick="adjustNewPcs(1)">＋</button>
+        </div>
+      </div>
+
+      <div id="newCategoryHint" class="scan-hint hidden" style="text-align:left; margin-bottom:14px;"></div>
+
+      <button class="btn-primary" onclick="submitNewSku()">신규 값 등록 및 완료</button>
+    </div>
+    <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
+  </div>
+
+</div>
+
+<!-- 변경요청 모달 -->
+<div class="modal-overlay" id="changeRequestModal">
+  <div class="modal-sheet">
+    <h3>변경 요청</h3>
+    <div class="form-group">
+      <label>폴리 규격 (새 값)</label>
+      <div class="poly-btn-row" id="crPolyBtnRow">
+        <button class="poly-btn" data-size="1호">1호</button>
+        <button class="poly-btn" data-size="2호">2호</button>
+        <button class="poly-btn" data-size="3호">3호</button>
+        <button class="poly-btn" data-size="4호">4호</button>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>새 pcs 값</label>
+      <input type="number" id="crPcsInput">
+    </div>
+    <div class="form-group">
+      <label>사유 (선택)</label>
+      <input type="text" id="crReasonInput" placeholder="예: 실측해보니 값이 다름">
+    </div>
+    <button class="btn-primary" onclick="submitChangeRequest()">요청 제출</button>
+    <button class="btn-secondary" onclick="closeChangeRequest()">취소</button>
   </div>
 </div>
 
+<div class="toast" id="toast"></div>
+
 <script>
-// ★ Supabase 설정
+// ============================================================
+// 설정
+// ============================================================
 const SUPABASE_URL = 'https://zscvnuwlhkbehmnfcsid.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzY3ZudXdsaGtiZWhtbmZjc2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0ODczMTMsImV4cCI6MjEwMTA2MzMxM30.74_Ftpek4somkdq4iGrbExVx8o2EUVLSk61qp8fj1qM';
 
-// ★ 상품확인 URL — 비면 버튼 비활성
-const PHOTO_SEARCH_BASE_URL = 'https://admin.a-bly.com/mobile/goods';
+// ★ 더미데이터 모드: true면 Supabase 없이 화면/로직 테스트 가능
+//    실제 배포 전에 false로 바꾸세요.
+const DUMMY_MODE = false;
 
-// URL 파라미터에서 소테이블 ID 추출 (?t=3층-1-3)
-const params = new URLSearchParams(window.location.search);
-const subTable = params.get('t');
-let lastScanTime = '';
+// ★ 시트 모드: true면 Supabase 대신 스프레드시트(google.script.run)로 조회.
+//    Apps Script 웹앱으로 배포했을 때만 동작(google.script.run이 존재).
+const SHEET_MODE = false;
+const SUPABASE_MODE = true; // GitHub Pages에서 Supabase 직접 연동
 
-if (subTable) {
-  document.getElementById('subBadge').textContent = subTable;
-  startPolling();
-} else {
-  document.getElementById('waitingView').innerHTML =
-    '<div class="waiting-icon">⚠️</div>' +
-    '<div class="waiting-title">소테이블 미지정</div>' +
-    '<div class="waiting-desc">QR코드를 통해 접속해주세요</div>';
+// ★ 상품확인(ABLY 상품검색) 페이지 주소 — 여기 앞부분만 넣으세요.
+//   예: 'https://내부주소/search' 또는 'https://내부주소/페이지'
+//   뒤의 ?keyword_type=sku_code&keyword=SKU값 은 자동으로 붙습니다.
+const PHOTO_SEARCH_BASE_URL = '';
+
+// 관리자는 헤더 '관리자' 클릭 → 비밀번호(0805) → 같은 화면에서 관리자 화면으로 전환(openAdmin)
+
+// 바코드 접두어(고정값) — parse_option_code()와 동일 규칙
+const BARCODE_PREFIX = 'i1822';
+
+// Supabase 클라이언트 — 라이브러리 로드 실패해도 앱이 죽지 않도록 안전 초기화
+let sbClient = null;
+try {
+  if (window.supabase && window.supabase.createClient) {
+    sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+  }
+} catch (e) {
+  console.warn('Supabase 초기화 실패, 더미모드로만 동작 가능:', e);
 }
 
-function startPolling() {
-  fetchInfo();
-  setInterval(fetchInfo, 5000);
+// ============================================================
+// 더미 데이터 (DUMMY_MODE에서만 사용)
+// ============================================================
+const DUMMY_SCAN_DATA = {
+  // 기존 값 있는 SKU (완폴리 아님)
+  'S1702693': {
+    option_code: 'S1702693', option_name: '와인/FREE', location_code: 'A10-2-1', tier: 4,
+    sku: '27574-68', product_name: '니트 가디건', category_large: '아우터', category_small: '니트',
+    is_wanpoly: false, poly_size: '2호', pcs_per_bag_3tier: 30, pcs_per_bag_4tier: 24,
+    pcs_for_current_tier: 24, confirm_count: 3, data_source: 'migrated',
+    defect_hint_text: '보풀/오염 주의', defect_hint_severity: 2
+  },
+  // 3단 로케이션 (D존)
+  'S2772486': {
+    option_code: 'S2772486', option_name: '블랙/FREE', location_code: 'D37-1-4', tier: 3,
+    sku: '27574-165', product_name: '기모 원피스', category_large: '원피스', category_small: '원피스',
+    is_wanpoly: false, poly_size: '3호', pcs_per_bag_3tier: 15, pcs_per_bag_4tier: 20,
+    pcs_for_current_tier: 15, confirm_count: 1, data_source: 'migrated',
+    defect_hint_text: null, defect_hint_severity: null
+  },
+  // 완폴리 상품
+  'S2725395': {
+    option_code: 'S2725395', option_name: '핑크/FREE', location_code: 'J35-2-3', tier: 4,
+    sku: '26766-561', product_name: '완폴리 블라우스', category_large: '상의', category_small: '블라우스',
+    is_wanpoly: true, poly_size: null, pcs_per_bag_3tier: null, pcs_per_bag_4tier: null,
+    pcs_for_current_tier: null, confirm_count: 1, data_source: 'migrated',
+    defect_hint_text: null, defect_hint_severity: null
+  },
+  // 신규 SKU (값 없음)
+  'S9999999': {
+    option_code: 'S9999999', option_name: '네이비/FREE', location_code: 'B35-4-1', tier: 4,
+    sku: '99999-1', product_name: '신규 테스트 상품', category_large: '상의', category_small: '니트',
+    is_wanpoly: false, poly_size: null, pcs_per_bag_3tier: null, pcs_per_bag_4tier: null,
+    pcs_for_current_tier: null, confirm_count: 1, data_source: 'worker_input',
+    defect_hint_text: null, defect_hint_severity: null
+  }
+};
+
+// 더미 재고(옵션코드 단위) — DUMMY_MODE 테스트용. 재고DB 구조 반영
+const DUMMY_STOCK = {
+  'S1702693': { stock: 42, location_code: 'A10-2-1', sku: '27574-68', option_name: '와인/FREE', product_name: '니트 가디건', category_small: '니트' },
+  'S2772486': { stock: 3,  location_code: 'D37-1-4', sku: '27574-165', option_name: '블랙/FREE', product_name: '기모 원피스', category_small: '원피스' },
+  'S2725395': { stock: 0,  location_code: 'J35-2-3', sku: '26766-561', option_name: '핑크/FREE', product_name: '블라우스', category_small: '블라우스' },
+  'S9999999': { stock: 15, location_code: 'B35-4-1', sku: '99999-1', option_name: '네이비/FREE', product_name: '신규 테스트 상품', category_small: '니트' }
+};
+
+// ============================================================
+// 상태
+// ============================================================
+// 더미 수정요청(관리자 화면 테스트용)
+const DUMMY_REQUESTS = [
+  { rowNum: 2, datetime: '2026-08-07 10:12:00', sku: '27574-68', category_small: '니트', location: 'A10-2-1', current_poly: '2호', request_poly: '3호', tier: '4', current_pcs: 20, request_pcs: 24, reason: '대봉에 더 들어감', status: '대기' },
+  { rowNum: 3, datetime: '2026-08-07 09:40:00', sku: '27574-165', category_small: '원피스', location: 'D37-1-4', current_poly: '3호', request_poly: '3호', tier: '3', current_pcs: 12, request_pcs: 9, reason: '덜 들어감', status: '대기' }
+];
+let currentTable = null;   // { table_code, bag_color, floor }
+let currentScan = null;    // 스캔 결과 원본 데이터(barcode_scan_result row)
+let selectedPolySize = null;
+let dummyTodayPcs = 0;     // 더미모드 오늘 pcs 누적
+let dummyTodayCount = 0;   // 더미모드 오늘 건수 누적
+
+// ============================================================
+// 초기화 — 테이블 목록 렌더링
+// ============================================================
+function renderTableGrid() {
+  const grid3f = document.getElementById('grid3f');
+  const grid2f = document.getElementById('grid2f');
+  grid3f.innerHTML = '';
+  grid2f.innerHTML = '';
+  for (let i = 1; i <= 7; i++) {
+    const btn3 = document.createElement('button');
+    btn3.className = 'table-btn floor3';
+    btn3.textContent = `3층 - ${i}번`;
+    btn3.onclick = () => selectTable(`3층-${i}`, '3층');
+    grid3f.appendChild(btn3);
+
+    const btn2 = document.createElement('button');
+    btn2.className = 'table-btn floor2';
+    btn2.textContent = `2층 - ${i}번`;
+    btn2.onclick = () => selectTable(`2층-${i}`, '2층');
+    grid2f.appendChild(btn2);
+  }
 }
 
-async function fetchInfo() {
-  try {
-    const url = `${SUPABASE_URL}/rest/v1/current_work?sub_table=eq.${encodeURIComponent(subTable)}&select=*&limit=1`;
-    const resp = await fetch(url, {
-      headers: {
-        'apikey': SUPABASE_ANON_KEY,
-        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
-      }
+// 로케이션 존 알파벳 → 층 판별
+// 3층=A,B,C,D,F,G,H / 2층=J,K,L,P,Q,R / M,S=낱장존(null)
+function floorFromLocation(loc) {
+  if (!loc) return null;
+  const zone = String(loc).charAt(0).toUpperCase();
+  if ('ABCDFGH'.indexOf(zone) !== -1) return '3층';
+  if ('JKLPQR'.indexOf(zone) !== -1) return '2층';
+  return null; // 낱장존 등
+}
+
+function bagColorOfFloor(floor) {
+  if (floor === '3층') return '투명';
+  if (floor === '2층') return '초록';
+  return '주황';
+}
+
+// 로케이션에서 대봉색 직접 판별 (테이블 층이 아니라 상품 로케이션 기준)
+function bagColorFromLocation(loc) {
+  return bagColorOfFloor(floorFromLocation(loc));
+}
+
+let currentSubTable = null; // 현재 선택된 소테이블 (예: '3층-1-3')
+
+function selectTable(tableCode, floor) {
+  currentTable = { table_code: tableCode, floor: floor, bag_color: bagColorOfFloor(floor) };
+  currentSubTable = null;
+  document.getElementById('currentTableLabel').textContent = tableCode;
+  showScreen('screenScan');
+  loadTodayStat();
+
+  // 소테이블 슬롯 생성 (8개)
+  const slotsDiv = document.getElementById('subTableSlots');
+  slotsDiv.innerHTML = '';
+  for (let i = 1; i <= 8; i++) {
+    const subId = floor + '-' + tableCode.replace(floor + '-', '') + '-' + i;
+    const btn = document.createElement('div');
+    btn.className = 'sub-slot';
+    btn.textContent = i;
+    btn.dataset.sub = subId;
+    btn.onclick = function() { selectSubTable(subId); };
+    slotsDiv.appendChild(btn);
+  }
+
+  // 바코드 입력은 소테이블 선택 후 활성화
+  const input = document.getElementById('barcodeInput');
+  input.disabled = true;
+  input.placeholder = '소테이블을 먼저 선택하세요';
+  document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
+
+  // 스캔 데이터 미리 로딩
+  if ((SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) && !sheetIndex) {
+    preloadSheetIndex().catch((e) => {
+      console.error('데이터 로딩 실패:', e);
+      showToast('데이터 로딩 실패');
     });
-    if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    const rows = await resp.json();
-    document.getElementById('statusDot').className = 'status-dot live';
-    document.getElementById('statusText').textContent = '실시간 연결 중';
+  }
+}
 
-    if (!rows.length || !rows[0].sku) {
-      document.getElementById('waitingView').style.display = '';
-      document.getElementById('infoView').style.display = 'none';
+function selectSubTable(subId) {
+  currentSubTable = subId;
+  document.querySelectorAll('.sub-slot').forEach(s => {
+    s.classList.toggle('active', s.dataset.sub === subId);
+  });
+  const input = document.getElementById('barcodeInput');
+  input.disabled = false;
+  input.placeholder = '바코드를 스캔하세요';
+  document.getElementById('scanHint').textContent = subId + ' 소테이블로 스캔 중';
+  focusBarcodeInput();
+}
+
+// ===== 홈 / 모드 전환 =====
+function goHome() {
+  showScreen('screenHome');
+  document.getElementById('headerTitle').textContent = '양품화';
+}
+
+// ===== 관리자 =====
+const ADMIN_PASSWORD = '0805';
+let adminAllRequests = [];
+let adminFilter = '대기';
+
+function openAdmin() {
+  const pw = prompt('관리자 비밀번호를 입력하세요');
+  if (pw === null) return;
+  if (pw !== ADMIN_PASSWORD) { showToast('비밀번호가 틀렸습니다'); return; }
+  document.getElementById('headerTitle').textContent = '관리자';
+  showScreen('screenAdmin');
+  switchAdminTab('requests');
+}
+
+function switchAdminTab(tab) {
+  document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.atab === tab));
+  document.getElementById('adminTabRequests').classList.toggle('hidden', tab !== 'requests');
+  document.getElementById('adminTabQr').classList.toggle('hidden', tab !== 'qr');
+  document.getElementById('adminTabSync').classList.toggle('hidden', tab !== 'sync');
+  if (tab === 'requests') loadAdminRequests();
+}
+
+function openQrPage() {
+  window.open('qr.html', '_blank');
+}
+
+function setAdminFilter(f) {
+  adminFilter = f;
+  document.querySelectorAll('.admin-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.af === f));
+  renderAdminRequests();
+}
+
+function callAdminGS(fnName, arg) {
+  return new Promise((resolve, reject) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      reject(new Error('google.script.run 사용 불가'));
       return;
     }
-    renderInfo(rows[0]);
+    const r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
+    if (fnName === 'get') r.qualityGetChangeRequests();
+    else if (fnName === 'approve') r.qualityApproveChangeRequest(arg);
+    else if (fnName === 'reject') r.qualityRejectChangeRequest(arg);
+  });
+}
+
+async function loadAdminRequests() {
+  const area = document.getElementById('adminRequestsArea');
+  area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
+  if (DUMMY_MODE) {
+    adminAllRequests = DUMMY_REQUESTS || [];
+    renderAdminRequests();
+    return;
+  }
+  try {
+    adminAllRequests = await loadChangeRequests();
+    if (!Array.isArray(adminAllRequests)) adminAllRequests = [];
+    renderAdminRequests();
   } catch (e) {
-    console.error('조회 실패:', e);
-    document.getElementById('statusDot').className = 'status-dot off';
-    document.getElementById('statusText').textContent = '연결 끊김';
+    console.error('수정요청 로드 실패:', e);
+    area.innerHTML = `<div class="collect-empty">불러오기 실패<br><small style="color:#b91c1c;">${e.message || String(e)}</small><br><br><button onclick="loadAdminRequests()" style="padding:8px 16px; background:var(--accent); color:#fff; border:none; border-radius:8px; cursor:pointer;">다시 시도</button></div>`;
   }
 }
 
-function renderInfo(data) {
-  const scanTime = data.scanned_at || '';
-  if (scanTime === lastScanTime) return;
-  lastScanTime = scanTime;
+function renderAdminRequests() {
+  const area = document.getElementById('adminRequestsArea');
+  let list = adminAllRequests;
+  if (adminFilter !== 'all') list = adminAllRequests.filter(r => (r.status || '대기') === adminFilter);
+  list = list.slice().reverse();
+  if (list.length === 0) { area.innerHTML = `<div class="collect-empty">${adminFilter} 상태의 요청이 없습니다</div>`; return; }
+  area.innerHTML = list.map(r => {
+    const status = r.status || '대기';
+    const polyChanged = r.request_poly && r.request_poly !== r.current_poly;
+    const pcsChanged = (r.request_pcs !== '' && r.request_pcs != null) && String(r.request_pcs) !== String(r.current_pcs);
+    let changes = '';
+    if (polyChanged) changes += `<div class="req-change"><span class="rc-label">폴리</span><span>${r.current_poly||'-'}</span><span class="req-arrow">→</span><span>${r.request_poly}</span></div>`;
+    if (pcsChanged) changes += `<div class="req-change"><span class="rc-label">대봉 ${r.tier}단</span><span>${r.current_pcs!==''?r.current_pcs+'pcs':'-'}</span><span class="req-arrow">→</span><span>${r.request_pcs}pcs</span></div>`;
+    if (!changes) changes = '<div class="req-change" style="color:#999;">변경 내용 없음</div>';
+    let actions = '';
+    if (status === '대기') {
+      actions = `<div class="req-actions">
+        <button class="btn-approve" onclick='approveReq(${JSON.stringify(r).replace(/'/g,"&#39;")})'>승인 · 반영</button>
+        <button class="btn-reject" onclick="rejectReq(${r.rowNum})">반려</button></div>`;
+    } else {
+      actions = `<span class="req-status ${status==='완료'?'done':'reject'}">${status}</span>`;
+    }
+    return `<div class="req-card">
+      <div class="req-head"><div><span class="req-sku">${r.sku}</span>${r.category_small?`<span class="ci-cat">${r.category_small}</span>`:''}</div><span class="req-time">${r.datetime||''}</span></div>
+      <div style="font-size:13px; color:var(--text-sub); margin-bottom:4px;">로케이션 ${r.location||'-'}</div>
+      ${changes}
+      ${r.reason?`<div class="req-reason">💬 ${escapeHtml(r.reason)}</div>`:''}
+      ${actions}
+    </div>`;
+  }).join('');
+}
 
-  document.getElementById('waitingView').style.display = 'none';
-  document.getElementById('infoView').style.display = '';
+async function approveReq(r) {
+  if (!confirm(`${r.sku} 수정요청을 승인하고 반영할까요?`)) return;
+  try {
+    await approveChangeRequestSupabase( { rowNum: r.rowNum, sku: r.sku, tier: r.tier, requestPoly: r.request_poly, requestPcs: r.request_pcs, categorySmall: r.category_small });
+    // 로컬 인덱스 즉시 반영
+    if (sheetIndex) {
+      if (r.request_poly) sheetIndex.polyBySku[r.sku] = r.request_poly;
+      if (r.request_pcs !== '' && r.request_pcs != null && r.tier) {
+        if (!sheetIndex.bagBySku[r.sku]) sheetIndex.bagBySku[r.sku] = { category_small: r.category_small||'', pcs3: null, pcs4: null };
+        if (String(r.tier) === '3') sheetIndex.bagBySku[r.sku].pcs3 = parseInt(r.request_pcs);
+        if (String(r.tier) === '4') sheetIndex.bagBySku[r.sku].pcs4 = parseInt(r.request_pcs);
+      }
+    }
+    showToast('승인 · 반영되었습니다');
+    loadAdminRequests();
+  } catch (e) { console.error(e); showToast('처리 실패'); }
+}
 
-  document.getElementById('tSku').textContent = data.sku || '-';
-  document.getElementById('tOption').textContent = (data.option_name || '') + ' · ' + (data.product_name || '');
+async function rejectReq(rowNum) {
+  if (!confirm('이 요청을 반려할까요?')) return;
+  try {
+    await rejectChangeRequestSupabase( rowNum);
+    showToast('반려되었습니다');
+    loadAdminRequests();
+  } catch (e) { console.error(e); showToast('처리 실패'); }
+}
 
-  // 상품확인
-  const photoLink = document.getElementById('tPhotoLink');
-  if (PHOTO_SEARCH_BASE_URL && data.sku) {
-    photoLink.href = PHOTO_SEARCH_BASE_URL + '?keyword_type=sku_code&keyword=' + encodeURIComponent(data.sku);
-    photoLink.classList.remove('disabled');
+function escapeHtml(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function enterQualityMode() {
+  document.getElementById('headerTitle').textContent = '양품화 작업';
+  showScreen('screenTableSelect');
+}
+
+function enterCollectMode() {
+  document.getElementById('headerTitle').textContent = '데이터 수집';
+  showScreen('screenCollectList');
+  document.getElementById('collectListArea').innerHTML = '<div class="collect-empty">데이터 불러오는 중...</div>';
+
+  const afterLoad = () => { buildCollectLists(); switchPrio(currentPrio); };
+  if (DUMMY_MODE) {
+    afterLoad();
+  } else if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+    if (sheetIndex) { afterLoad(); }
+    else {
+      preloadSheetIndex().then(afterLoad).catch((e) => {
+        console.error(e);
+        document.getElementById('collectListArea').innerHTML = '<div class="collect-empty">데이터 로딩 실패</div>';
+      });
+    }
+  }
+}
+
+function showTableSelect() {
+  showScreen('screenTableSelect');
+}
+
+function showScreen(id) {
+  const screens = ['screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
+  screens.forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+}
+
+function focusBarcodeInput() {
+  setTimeout(() => {
+    const el = document.getElementById('barcodeInput');
+    if (el) el.focus();
+  }, 100);
+}
+
+// ============================================================
+// 데이터 수집 모드 (목록 기반)
+// ============================================================
+let collectScan = null;        // 현재 선택한 항목 데이터
+let collectSelectedPoly = null;
+let collectTodayCount = 0;
+let currentPrio = 1;
+let collectGroups = { 1: [], 2: [], 3: [] };
+const lockedSkus = new Set(); // 현재 작업 중인 SKU 세트 (동시 작업 방지)
+
+// 대봉 못 채울 정도로 재고가 적다고 볼 임계값(참고 표시용)
+const LOW_STOCK_THRESHOLD = 5;
+
+// 시즌 판정: 오늘 날짜 기준 (SS=4~9월, FW=10~3월)
+function currentSeason() {
+  const m = new Date().getMonth() + 1; // 1~12
+  return (m >= 4 && m <= 9) ? 'SS' : 'FW';
+}
+
+// 재고량 → 우선순위(1/2/3). 시즌별 기준 다름
+function stockPriority(stock) {
+  const season = currentSeason();
+  if (season === 'SS') {
+    if (stock >= 50) return 1;
+    if (stock >= 20) return 2;
+    if (stock >= 1) return 3;
+  } else { // FW
+    if (stock >= 15) return 1;
+    if (stock >= 5) return 2;
+    if (stock >= 1) return 3;
+  }
+  return null; // 재고 0
+}
+
+// 수집 완료 여부: 폴리 + (tier에 맞는)pcs 둘 다 있으면 완료. 단 대봉 제외 로케이션은 폴리만 있으면 완료
+function isCollected(item) {
+  const hasPoly = !!item.poly_size;
+  if (isBagExcludedLocation(item.location_code)) return hasPoly;
+  const hasPcs = (item.pcs_per_bag_3tier != null) || (item.pcs_per_bag_4tier != null);
+  return hasPoly && hasPcs;
+}
+
+// 재고DB 전체를 순회해 우선순위 3그룹으로 분류(로케이션 순 정렬, 완료건도 포함)
+function buildCollectLists() {
+  collectGroups = { 1: [], 2: [], 3: [] };
+  const stockMap = (DUMMY_MODE ? DUMMY_STOCK : (sheetIndex ? sheetIndex.stockByOption : {})) || {};
+
+  Object.keys(stockMap).forEach(oc => {
+    const s = stockMap[oc];
+    const stock = s.stock || 0;
+    const prio = stockPriority(stock);
+    if (!prio) return; // 재고 0 제외
+
+    const sku = s.sku || '';
+    const bag = (sheetIndex && sheetIndex.bagBySku) ? (sheetIndex.bagBySku[sku] || {}) : {};
+    const poly = (sheetIndex && sheetIndex.polyBySku) ? (sheetIndex.polyBySku[sku] || null) : null;
+    // 카테고리: 카테고리DB 우선, 없으면 대봉탭 소카, 없으면 더미
+    const cat = (sheetIndex && sheetIndex.categoryBySku) ? (sheetIndex.categoryBySku[sku] || null) : null;
+    const categorySmall = (cat && cat.category_small) || bag.category_small || s.category_small || '';
+    const categoryLarge = (cat && cat.category_large) || '';
+
+    const item = {
+      option_code: oc,
+      sku: sku,
+      option_name: s.option_name || '',
+      product_name: s.product_name || '',
+      location_code: s.location_code || '',
+      stock: stock,
+      category_small: categorySmall,
+      category_large: categoryLarge,
+      poly_size: poly,
+      pcs_per_bag_3tier: (bag.pcs3 !== undefined) ? bag.pcs3 : null,
+      pcs_per_bag_4tier: (bag.pcs4 !== undefined) ? bag.pcs4 : null
+    };
+    item.collected = isCollected(item); // 완료 여부 플래그(숨기지 않고 표시)
+    collectGroups[prio].push(item);
+  });
+
+  // 각 그룹: 미완료 먼저, 완료는 아래로. 그 안에서 로케이션 순
+  [1,2,3].forEach(p => {
+    collectGroups[p].sort((a,b) => {
+      if (a.collected !== b.collected) return a.collected ? 1 : -1;
+      return (a.location_code || '').localeCompare(b.location_code || '');
+    });
+  });
+
+  document.getElementById('collectSeasonLabel').textContent = `데이터 수집 · ${currentSeason()} 시즌`;
+  document.getElementById('prioCount1').textContent = collectGroups[1].filter(x=>!x.collected).length;
+  document.getElementById('prioCount2').textContent = collectGroups[2].filter(x=>!x.collected).length;
+  document.getElementById('prioCount3').textContent = collectGroups[3].filter(x=>!x.collected).length;
+
+  // 진행률 갱신
+  const total = collectGroups[1].length + collectGroups[2].length + collectGroups[3].length;
+  const done = [1,2,3].reduce((s,p) => s + collectGroups[p].filter(x=>x.collected).length, 0);
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  document.getElementById('progressBarFill').style.width = pct + '%';
+  document.getElementById('progressLabel').textContent = `완료 ${done} / ${total} (${pct}%)`;
+}
+
+function switchPrio(prio) {
+  currentPrio = prio;
+  document.querySelectorAll('.prio-tab').forEach(t => {
+    t.classList.toggle('active', parseInt(t.dataset.prio) === prio);
+  });
+  renderCollectList();
+}
+
+function renderCollectList() {
+  const area = document.getElementById('collectListArea');
+  const list = collectGroups[currentPrio] || [];
+  if (list.length === 0) {
+    area.innerHTML = '<div class="collect-empty">이 순위에 항목이 없습니다</div>';
+    return;
+  }
+  area.innerHTML = list.map((item, i) => {
+    const bagExcluded = isBagExcludedLocation(item.location_code);
+    const hasPoly = !!item.poly_size;
+    const hasPcs = (item.pcs_per_bag_3tier != null) || (item.pcs_per_bag_4tier != null);
+    // 상태 뱃지
+    let status = '';
+    if (item.collected) {
+      const polyTxt = `<span class="chk done">폴리 ✓</span>`;
+      const bagTxt = bagExcluded ? `<span class="chk na">대봉 제외</span>` : `<span class="chk done">대봉 ✓</span>`;
+      status = polyTxt + bagTxt;
+    } else {
+      const polyTxt = hasPoly ? `<span class="chk done">폴리 ✓</span>` : `<span class="chk todo">폴리</span>`;
+      const bagTxt = bagExcluded ? `<span class="chk na">대봉 제외</span>` : (hasPcs ? `<span class="chk done">대봉 ✓</span>` : `<span class="chk todo">대봉</span>`);
+      status = polyTxt + bagTxt;
+    }
+    const isLocked = lockedSkus.has(item.sku) && collectScan?.sku !== item.sku;
+    const rightBtn = item.collected
+      ? `<button class="edit-req-btn" onclick="event.stopPropagation(); openEditRequest(${currentPrio}, ${i})">수정요청</button>`
+      : isLocked
+        ? `<div class="ci-loc" style="color:#d97706;">작업 중 🔒</div>`
+        : `<div class="ci-loc">${item.location_code || '-'}</div><div class="ci-stock">재고 ${item.stock}개</div>`;
+    return `
+      <div class="collect-item ${item.collected ? 'is-done' : ''}" onclick="${(item.collected || isLocked) ? '' : `openCollectItem(${currentPrio}, ${i})`}">
+        <div class="ci-left">
+          <div class="ci-sku">${item.sku} ${item.category_small ? `<span class="ci-cat">${item.category_small}</span>` : ''}</div>
+          <div class="ci-status">${status}</div>
+          <div class="ci-sub">${item.location_code || '-'} · 재고 ${item.stock}개</div>
+        </div>
+        <div class="ci-right">${rightBtn}</div>
+      </div>
+    `;
+  }).join('');
+}
+
+function openCollectItem(prio, idx) {
+  const item = collectGroups[prio][idx];
+  if (!item) return;
+  if (lockedSkus.has(item.sku)) {
+    showToast('다른 작업자가 이 SKU를 작업 중입니다. 잠시 후 다시 시도하세요.');
+    return;
+  }
+  lockedSkus.add(item.sku);
+  item.tier = tierFromLocation(item.location_code);
+  collectScan = item;
+  renderCollectInput(item);
+}
+
+// ===== 수정요청 =====
+let editReqItem = null;
+let editReqPoly = null;
+
+function openEditRequest(prio, idx) {
+  const item = collectGroups[prio][idx];
+  if (!item) return;
+  openEditRequestForItem(item);
+}
+
+// 입력 화면에서 '수정' 버튼 클릭 시 — 현재 항목을 수정요청 화면으로
+function editFromInput(which) {
+  if (!collectScan) return;
+  openEditRequestForItem(collectScan, which);
+}
+
+// 실제 수정요청 화면 구성 (item 객체 직접 받음). focusField: 'poly'|'pcs'|undefined
+function openEditRequestForItem(item, focusField) {
+  item.tier = tierFromLocation(item.location_code);
+  editReqItem = item;
+  const bagExcluded = isBagExcludedLocation(item.location_code);
+
+  document.getElementById('erSku').textContent = item.sku;
+  document.getElementById('erOption').textContent = `${item.option_name || ''} · ${item.product_name || ''}`;
+  setPhotoLink('erPhotoLink', item.sku);
+
+  const curPcs = item.tier === 3 ? item.pcs_per_bag_3tier : (item.tier === 4 ? item.pcs_per_bag_4tier : null);
+  const parts = [`폴리 ${item.poly_size || '-'}`];
+  if (!bagExcluded) parts.push(`${item.tier}단 ${curPcs != null ? curPcs : '-'}pcs`);
+  document.getElementById('erCurrentInfo').innerHTML = `현재 값: ${parts.join(' · ')} · 로케이션 ${item.location_code || '-'}`;
+
+  editReqPoly = item.poly_size || null;
+  document.querySelectorAll('#erPolyBtnRow .poly-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.size === editReqPoly);
+  });
+
+  const pcsGroup = document.getElementById('erPcsGroup');
+  if (bagExcluded) { pcsGroup.style.display = 'none'; }
+  else { pcsGroup.style.display = ''; document.getElementById('erPcsInput').value = curPcs != null ? curPcs : ''; }
+
+  document.getElementById('erReasonInput').value = '';
+  showScreen('screenEditRequest');
+}
+
+document.getElementById('erPolyBtnRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.poly-btn');
+  if (!btn) return;
+  document.querySelectorAll('#erPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  editReqPoly = btn.dataset.size;
+});
+
+function adjustErPcs(delta) {
+  const input = document.getElementById('erPcsInput');
+  const cur = parseInt(input.value) || 0;
+  input.value = Math.max(0, cur + delta);
+}
+
+async function submitEditRequest() {
+  const item = editReqItem;
+  const bagExcluded = isBagExcludedLocation(item.location_code);
+  const reqPcs = parseInt(document.getElementById('erPcsInput').value);
+  const reason = document.getElementById('erReasonInput').value.trim();
+  const curPcs = item.tier === 3 ? item.pcs_per_bag_3tier : (item.tier === 4 ? item.pcs_per_bag_4tier : null);
+
+  // 변경점이 하나도 없으면 막기
+  const polyChanged = editReqPoly && editReqPoly !== item.poly_size;
+  const pcsChanged = !bagExcluded && reqPcs && reqPcs !== curPcs;
+  if (!polyChanged && !pcsChanged) {
+    showToast('변경할 값을 입력해주세요 (기존과 달라야 함)');
+    return;
+  }
+
+  const btn = document.querySelector('#screenEditRequest .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '제출 중...'; }
+
+  try {
+    if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+      await saveChangeRequestToSupabase({
+        sku: item.sku,
+        categorySmall: item.category_small || '',
+        location: item.location_code || '',
+        currentPoly: item.poly_size || '',
+        requestPoly: editReqPoly || item.poly_size || '',
+        tier: bagExcluded ? '' : item.tier,
+        currentPcs: bagExcluded ? null : curPcs,
+        requestPcs: bagExcluded ? null : (reqPcs || curPcs),
+        reason: reason
+      });
+    }
+    showToast('수정요청이 제출되었습니다 (관리자 확인 후 반영)');
+    backToCollectList();
+  } catch (e) {
+    console.error(e);
+    showToast('제출 실패 — 다시 시도해주세요');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '수정요청 제출'; }
+  }
+}
+
+function backToCollectList() {
+  if (collectScan) lockedSkus.delete(collectScan.sku); // 잠금 해제
+  collectScan = null;
+  collectSelectedPoly = null;
+  buildCollectLists();
+  switchPrio(currentPrio);
+  showScreen('screenCollectList');
+}
+
+function renderCollectInput(data) {
+  document.getElementById('colSku').textContent = data.sku;
+  document.getElementById('colOption').textContent = `${data.option_name || ''} · ${data.product_name || ''}`;
+  setPhotoLink('colPhotoLink', data.sku);
+
+  const stock = data.stock || 0;
+  const stockBanner = document.getElementById('colStockBanner');
+  // 재고 배너(목록에서 이미 걸러졌지만 참고 표시)
+  if (stock <= LOW_STOCK_THRESHOLD) {
+    stockBanner.className = 'stock-banner low';
+    stockBanner.innerHTML = `⚠️ 재고 ${stock}개 · 로케이션 ${data.location_code || '-'} — 대봉 못 채울 수 있음`;
+  } else {
+    stockBanner.className = 'stock-banner ok';
+    stockBanner.innerHTML = `📍 로케이션 ${data.location_code || '-'} · 재고 ${stock}개`;
+  }
+  document.getElementById('colInputArea').style.display = '';
+
+  // 이미 수집됨 여부(부분 입력 상태 안내)
+  const alreadyBanner = document.getElementById('colAlreadyBanner');
+  const hasPoly = !!data.poly_size;
+  const hasPcs = (data.pcs_per_bag_3tier != null || data.pcs_per_bag_4tier != null);
+  if (hasPoly || hasPcs) {
+    const parts = [];
+    if (hasPoly) parts.push(`폴리 ${data.poly_size}`);
+    if (data.pcs_per_bag_3tier != null) parts.push(`3단 ${data.pcs_per_bag_3tier}pcs`);
+    if (data.pcs_per_bag_4tier != null) parts.push(`4단 ${data.pcs_per_bag_4tier}pcs`);
+    alreadyBanner.className = 'already-banner';
+    alreadyBanner.innerHTML = `ℹ️ 일부 값이 이미 있습니다 (${parts.join(' · ')}). 다시 입력하면 덮어씁니다.`;
+    alreadyBanner.style.display = '';
+  } else {
+    alreadyBanner.style.display = 'none';
+  }
+
+  const tierTxt = data.tier ? `${data.tier}단 기준 · ` : '';
+  document.getElementById('colPcsLabel').textContent = `${tierTxt}대봉당 최대 pcs (실측)`;
+
+  // 대봉 작업 제외 로케이션(33-, H90~H95)이면 pcs 입력/가득채움 체크 숨기고 폴리만
+  const bagExcluded = isBagExcludedLocation(data.location_code);
+  data._bagExcluded = bagExcluded;
+  const pcsGroup = document.getElementById('colPcsInput').closest('.form-group');
+
+  // 이미 값이 있는 필드는 잠금(수정요청으로만 변경), 빈 필드만 입력 가능
+  const polyLocked = hasPoly;
+  const pcsLocked = hasPcs;
+  data._polyLocked = polyLocked;
+  data._pcsLocked = pcsLocked;
+
+  // 폴리 버튼: 잠겼으면 비활성
+  collectSelectedPoly = data.poly_size || null;
+  document.querySelectorAll('#colPolyBtnRow .poly-btn').forEach(b => {
+    b.classList.toggle('selected', b.dataset.size === collectSelectedPoly);
+    b.disabled = polyLocked;
+    b.style.opacity = polyLocked ? '0.5' : '';
+    b.style.pointerEvents = polyLocked ? 'none' : '';
+  });
+  const polyLabel = document.getElementById('colPolyLabel');
+  if (polyLabel) polyLabel.textContent = polyLocked ? '폴리 규격 (입력됨)' : '폴리 규격';
+  // 폴리 값 있을 때만 수정 버튼 표시
+  document.getElementById('colPolyEditBtn').style.display = polyLocked ? '' : 'none';
+
+  if (bagExcluded && !pcsLocked) {
+    // 대봉 제외 로케이션 + 대봉값 없음 → pcs 영역 숨기고 폴리만
+    if (pcsGroup) pcsGroup.style.display = 'none';
+    alreadyBanner.className = 'already-banner';
+    const prev = alreadyBanner.style.display === '' ? alreadyBanner.innerHTML + '<br>' : '';
+    alreadyBanner.innerHTML = prev + '📦 이 로케이션은 대봉 작업 대상이 아닙니다 — 폴리 데이터만 입력하세요.';
+    alreadyBanner.style.display = '';
+    document.getElementById('colPcsEditBtn').style.display = 'none';
+  } else if (bagExcluded && pcsLocked) {
+    // 대봉 제외지만 이미 대봉값이 있음 → 값 보여주고(잠금) 수정 버튼만 노출(신규 입력은 막음)
+    if (pcsGroup) pcsGroup.style.display = '';
+    if (fillCheck) fillCheck.style.display = 'none';
+    const pcsInput = document.getElementById('colPcsInput');
+    pcsInput.disabled = true;
+    pcsInput.style.opacity = '0.5';
+    if (document.getElementById('colPcsLabel')) {
+      document.getElementById('colPcsLabel').textContent = `${tierTxt}대봉당 pcs (입력됨 · 대봉 제외 로케이션)`;
+    }
+    document.getElementById('colPcsEditBtn').style.display = '';
+    alreadyBanner.className = 'already-banner';
+    const prev = alreadyBanner.style.display === '' ? alreadyBanner.innerHTML + '<br>' : '';
+    alreadyBanner.innerHTML = prev + '📦 대봉 작업 대상이 아닌 로케이션입니다. 기존 대봉 값은 수정만 가능합니다.';
+    alreadyBanner.style.display = '';
+  } else {
+    if (pcsGroup) pcsGroup.style.display = '';
+    // pcs: 잠겼으면 읽기전용, 가득채움 체크는 이미 채워진 경우 숨김
+    const pcsInput = document.getElementById('colPcsInput');
+    pcsInput.disabled = pcsLocked;
+    pcsInput.style.opacity = pcsLocked ? '0.5' : '';
+    if (document.getElementById('colPcsLabel')) {
+      document.getElementById('colPcsLabel').textContent = pcsLocked
+        ? `${tierTxt}대봉당 pcs (입력됨)`
+        : `${tierTxt}대봉당 최대 pcs (실측)`;
+    }
+    // pcs 값 있을 때만 수정 버튼 표시
+    document.getElementById('colPcsEditBtn').style.display = pcsLocked ? '' : 'none';
+  }
+
+  const existingPcs = data.tier === 3 ? data.pcs_per_bag_3tier : (data.tier === 4 ? data.pcs_per_bag_4tier : null);
+  document.getElementById('colPcsInput').value = existingPcs != null ? existingPcs : '';
+
+  // 둘 다 이미 있으면(이론상 여기 안 옴 - 완료건은 목록서 잠김) 완료 버튼 비활성
+  const saveBtn = document.querySelector('#screenCollectInput .btn-primary');
+  if (saveBtn) {
+    const nothingToInput = (polyLocked || false) && (pcsLocked || bagExcluded);
+    saveBtn.disabled = nothingToInput;
+    saveBtn.textContent = nothingToInput ? '입력할 항목 없음' : '수집 완료';
+  }
+
+  showScreen('screenCollectInput');
+}
+
+document.getElementById('colPolyBtnRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.poly-btn');
+  if (!btn) return;
+  document.querySelectorAll('#colPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  collectSelectedPoly = btn.dataset.size;
+});
+
+function adjustColPcs(delta) {
+  const input = document.getElementById('colPcsInput');
+  if (input.disabled) return; // 잠긴 경우 무시
+  const cur = parseInt(input.value) || 0;
+  input.value = Math.max(0, cur + delta);
+}
+
+async function submitCollect() {
+  const bagExcluded = !!collectScan._bagExcluded;
+  const pcsRaw = document.getElementById('colPcsInput').value;
+  const pcsValue = parseInt(pcsRaw);
+  const tier = collectScan.tier;
+  // 잠긴(이미 값 있는) 필드는 저장 대상 아님 — 빈 필드만 새로 저장
+  const hasPoly = !!collectSelectedPoly && !collectScan._polyLocked;
+  const hasPcs = !bagExcluded && !collectScan._pcsLocked && pcsRaw !== '' && pcsValue > 0;
+
+  // 최소 하나(폴리 또는 pcs)는 입력돼야 함
+  if (!hasPoly && !hasPcs) {
+    showToast('폴리 또는 대봉 pcs 중 하나 이상 입력해주세요');
+    return;
+  }
+  // pcs를 입력했다면 tier 판별 필요
+  if (hasPcs) {
+    if (!tier) { showToast('이 상품은 tier 판별이 안 됩니다(낱장존 등)'); return; }
+  }
+
+  const btn = document.querySelector('#screenCollectInput .btn-primary');
+  if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
+
+  try {
+    if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+      const payload = {
+        sku: collectScan.sku,
+        categorySmall: collectScan.category_small || ''
+      };
+      if (hasPoly) payload.polySize = collectSelectedPoly;   // 폴리 입력했을 때만
+      if (hasPcs) { payload.tier = tier; payload.pcs = pcsValue; } // pcs 입력했을 때만
+      await (SUPABASE_MODE ? saveToSupabase : saveNewSkuToSheet)(payload);
+
+      // 로컬 인덱스 즉시 갱신(양단 자동 계산 포함)
+      if (sheetIndex) {
+        const sku = collectScan.sku;
+        const cat = collectScan.category_small || '';
+        if (hasPoly) sheetIndex.polyBySku[sku] = collectSelectedPoly;
+        if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: cat, pcs3: null, pcs4: null };
+        if (cat) sheetIndex.bagBySku[sku].category_small = cat;
+        if (hasPcs) {
+          const otherPcs = convertPcsLocal(pcsValue, tier);
+          if (tier === 4) {
+            sheetIndex.bagBySku[sku].pcs4 = pcsValue;
+            if (otherPcs != null) sheetIndex.bagBySku[sku].pcs3 = otherPcs;
+          } else {
+            sheetIndex.bagBySku[sku].pcs3 = pcsValue;
+            if (otherPcs != null) sheetIndex.bagBySku[sku].pcs4 = otherPcs;
+          }
+        }
+      }
+    }
+    collectTodayCount += 1;
+    document.getElementById('collectTodayCount').textContent = collectTodayCount;
+    showToast('저장되었습니다');
+    backToCollectList();
+  } catch (e) {
+    console.error(e);
+    showToast('저장 실패 — 다시 시도해주세요');
+  } finally {
+    if (btn) { btn.disabled = false; btn.textContent = '수집 완료'; }
+  }
+}
+
+// ============================================================
+// 오늘 실적 통계
+// ============================================================
+async function loadTodayStat() {
+  if (!currentTable) return;
+
+  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+    // 더미모드: 세션 동안 로컬 카운트만 표시
+    document.getElementById('todayPcs').textContent = dummyTodayPcs;
+    document.getElementById('todayCount').textContent = dummyTodayCount;
+    return;
+  }
+
+  const todayStart = new Date();
+  todayStart.setHours(0, 0, 0, 0);
+
+  const { data, error } = await sbClient
+    .from('processing_log')
+    .select('pcs')
+    .eq('table_code', currentTable.table_code)
+    .gte('created_at', todayStart.toISOString());
+
+  if (error) { console.error(error); return; }
+  const totalPcs = (data || []).reduce((sum, r) => sum + (r.pcs || 0), 0);
+  document.getElementById('todayPcs').textContent = totalPcs;
+  document.getElementById('todayCount').textContent = (data || []).length;
+}
+
+// ============================================================
+// 바코드 스캔
+// ============================================================
+document.getElementById('barcodeInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter') {
+    const raw = e.target.value.trim();
+    e.target.value = '';
+    if (raw) handleBarcodeScan(raw);
+  }
+});
+
+function parseOptionCode(raw) {
+  if (raw.startsWith(BARCODE_PREFIX)) {
+    return raw.substring(BARCODE_PREFIX.length);
+  }
+  return raw;
+}
+
+
+
+
+
+
+
+
+
+// 소테이블에 스캔 정보 전송 — 시트 + Supabase 동시 (GitHub Pages 화면은 Supabase에서 읽음)
+function trySendToSubTable(data) {
+  if (!currentSubTable) return;
+  const payload = {
+    subTable: currentSubTable,
+    sku: data.sku || '',
+    optionName: data.option_name || '',
+    productName: data.product_name || '',
+    poly: data.poly_size || '',
+    pcs: data.pcs_for_current_tier != null ? data.pcs_for_current_tier : '',
+    bagColor: bagColorFromLocation(data.location_code),
+    tier: data.tier || '',
+    location: data.location_code || '',
+    categorySmall: data.category_small || ''
+  };
+
+    }
+
+  // 2) Supabase 전송 (GitHub Pages 소테이블 화면용)
+  pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
+}
+
+// Supabase current_work 테이블에 직접 upsert
+async function pushToSubTableSupabase(p) {
+  const url = SUPABASE_URL + '/rest/v1/current_work';
+  const body = {
+    sub_table: p.subTable,
+    sku: p.sku,
+    option_name: p.optionName,
+    product_name: p.productName,
+    poly: p.poly,
+    pcs: p.pcs !== '' ? p.pcs : null,
+    bag_color: p.bagColor,
+    tier: p.tier !== '' ? parseInt(p.tier) || null : null,
+    location_code: p.location,
+    category_small: p.categorySmall,
+    scanned_at: new Date().toISOString()
+  };
+  await fetch(url, {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify(body)
+  });
+}
+
+// ===== 프리로드 인덱스(스캔 속도 향상용) =====
+let sheetIndex = null;
+
+// ============================================================
+// Supabase REST API 헬퍼 (GitHub Pages에서 직접 호출)
+// ============================================================
+async function sbFetch(path, method, body) {
+  const opts = {
+    method: method || 'GET',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json'
+    }
+  };
+  if (method === 'POST' || method === 'PATCH') {
+    opts.headers['Prefer'] = 'return=representation,resolution=merge-duplicates';
+  }
+  if (body) opts.body = JSON.stringify(body);
+  const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
+  if (!resp.ok) throw new Error('Supabase ' + resp.status + ': ' + (await resp.text()).substring(0, 200));
+  const text = await resp.text();
+  return text ? JSON.parse(text) : null;
+}
+
+// 전체 인덱스를 Supabase에서 로드 (preloadSheetIndex 대체)
+async function loadSupabaseIndex() {
+  if (sheetIndex) return sheetIndex;
+
+  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows] = await Promise.all([
+    sbFetch('invoice?select=option_code,sku,option_name,product_name,location_code&limit=10000'),
+    sbFetch('sku_poly?select=sku,category_small,poly_size&limit=10000'),
+    sbFetch('sku_bag?select=sku,category_small,pcs_3tier,pcs_4tier&limit=10000'),
+    sbFetch('defect_hint?select=category,hint_text,severity&limit=5000'),
+    sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
+    sbFetch('category?select=sku,category_large,category_small&limit=50000')
+  ]);
+
+  const invoiceByOption = {};
+  invoiceRows.forEach(r => {
+    if (r.option_code) invoiceByOption[r.option_code] = {
+      sku: r.sku || '', option_name: r.option_name || '', product_name: r.product_name || '', location_code: r.location_code || ''
+    };
+  });
+
+  const polyBySku = {};
+  polyRows.forEach(r => { if (r.sku && r.poly_size) polyBySku[r.sku] = r.poly_size; });
+
+  const bagBySku = {};
+  bagRows.forEach(r => {
+    if (r.sku) bagBySku[r.sku] = { category_small: r.category_small || '', pcs3: r.pcs_3tier, pcs4: r.pcs_4tier };
+  });
+
+  const defectByCat = {};
+  defectRows.forEach(r => {
+    if (r.category) defectByCat[r.category] = { hint_text: r.hint_text || '', severity: r.severity || 1 };
+  });
+
+  const stockByOption = {};
+  stockRows.forEach(r => {
+    if (r.option_code) stockByOption[r.option_code] = {
+      stock: r.stock_qty || 0, location_code: r.location_code || '', sku: r.sku || '', option_name: r.option_name || ''
+    };
+  });
+
+  const categoryBySku = {};
+  catRows.forEach(r => {
+    if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large || '', category_small: r.category_small || '' };
+  });
+
+  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku };
+  return sheetIndex;
+}
+
+// SKU 폴리/대봉 저장 (saveNewSkuToSheet 대체)
+async function saveToSupabase(payload) {
+  if (!payload || !payload.sku) throw new Error('sku 없음');
+  const sku = payload.sku;
+
+  // 소카 자동 조회
+  let catSmall = payload.categorySmall || '';
+  if (!catSmall && sheetIndex && sheetIndex.categoryBySku && sheetIndex.categoryBySku[sku]) {
+    catSmall = sheetIndex.categoryBySku[sku].category_small || '';
+  }
+
+  if (payload.polySize) {
+    await sbFetch('sku_poly?on_conflict=sku', 'POST', {
+      sku: sku, category_small: catSmall, poly_size: payload.polySize, updated_at: new Date().toISOString()
+    });
+  }
+
+  if (payload.pcs != null && payload.tier) {
+    const inputPcs = Number(payload.pcs);
+    const otherPcs = convertPcsLocal(inputPcs, payload.tier);
+    const row = { sku: sku, category_small: catSmall, updated_at: new Date().toISOString() };
+    if (payload.tier === 4) { row.pcs_4tier = inputPcs; if (otherPcs != null) row.pcs_3tier = otherPcs; }
+    else { row.pcs_3tier = inputPcs; if (otherPcs != null) row.pcs_4tier = otherPcs; }
+    await sbFetch('sku_bag?on_conflict=sku', 'POST', row);
+  }
+
+  // 로컬 인덱스 즉시 갱신
+  if (sheetIndex) {
+    if (payload.polySize) sheetIndex.polyBySku[sku] = payload.polySize;
+    if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: catSmall, pcs3: null, pcs4: null };
+    if (catSmall) sheetIndex.bagBySku[sku].category_small = catSmall;
+    if (payload.pcs != null && payload.tier) {
+      const inputPcs = Number(payload.pcs);
+      const otherPcs = convertPcsLocal(inputPcs, payload.tier);
+      if (payload.tier === 4) { sheetIndex.bagBySku[sku].pcs4 = inputPcs; if (otherPcs != null) sheetIndex.bagBySku[sku].pcs3 = otherPcs; }
+      else { sheetIndex.bagBySku[sku].pcs3 = inputPcs; if (otherPcs != null) sheetIndex.bagBySku[sku].pcs4 = otherPcs; }
+    }
+  }
+  return { ok: true };
+}
+
+// 수정요청 저장 (saveChangeRequestToSheet 대체)
+async function saveChangeRequestToSupabase(p) {
+  await sbFetch('change_request', 'POST', {
+    sku: p.sku, category_small: p.categorySmall || '', location_code: p.location || '',
+    current_poly: p.currentPoly || '', request_poly: p.requestPoly || '',
+    current_tier: p.tier || '', current_pcs: p.currentPcs, request_pcs: p.requestPcs,
+    reason: p.reason || '', status: '대기'
+  });
+  return { ok: true };
+}
+
+// 수정요청 목록 조회 (callAdminGS('get') 대체)
+async function loadChangeRequests() {
+  const rows = await sbFetch('change_request?select=*&order=id.desc&limit=200');
+  return rows.map(r => ({
+    rowNum: r.id, datetime: r.requested_at || '', sku: r.sku || '', category_small: r.category_small || '',
+    location: r.location_code || '', current_poly: r.current_poly || '', request_poly: r.request_poly || '',
+    tier: r.current_tier || '', current_pcs: r.current_pcs, request_pcs: r.request_pcs,
+    reason: r.reason || '', status: r.status || '대기'
+  }));
+}
+
+// 수정요청 승인 (callAdminGS('approve') 대체)
+async function approveChangeRequestSupabase(p) {
+  // 폴리 반영
+  if (p.requestPoly) {
+    await sbFetch('sku_poly?on_conflict=sku', 'POST', {
+      sku: p.sku, poly_size: p.requestPoly, category_small: p.categorySmall || '', updated_at: new Date().toISOString()
+    });
+  }
+  // pcs 반영
+  if (p.requestPcs != null && p.requestPcs !== '' && p.tier) {
+    const row = { sku: p.sku, category_small: p.categorySmall || '', updated_at: new Date().toISOString() };
+    if (String(p.tier) === '3') row.pcs_3tier = parseInt(p.requestPcs);
+    else row.pcs_4tier = parseInt(p.requestPcs);
+    await sbFetch('sku_bag?on_conflict=sku', 'POST', row);
+  }
+  // 상태 완료
+  await sbFetch('change_request?id=eq.' + p.rowNum, 'PATCH', { status: '완료', resolved_at: new Date().toISOString() });
+  // 로컬 인덱스 갱신
+  if (sheetIndex) {
+    if (p.requestPoly) sheetIndex.polyBySku[p.sku] = p.requestPoly;
+    if (p.requestPcs != null && p.tier) {
+      if (!sheetIndex.bagBySku[p.sku]) sheetIndex.bagBySku[p.sku] = { category_small: '', pcs3: null, pcs4: null };
+      if (String(p.tier) === '3') sheetIndex.bagBySku[p.sku].pcs3 = parseInt(p.requestPcs);
+      else sheetIndex.bagBySku[p.sku].pcs4 = parseInt(p.requestPcs);
+    }
+  }
+  return { ok: true };
+}
+
+// 수정요청 반려 (callAdminGS('reject') 대체)
+async function rejectChangeRequestSupabase(id) {
+  await sbFetch('change_request?id=eq.' + id, 'PATCH', { status: '반려' });
+  return { ok: true };
+}
+
+// 소테이블 전송 (Supabase current_work upsert)
+async function pushToSubTableSupabase(p) {
+  await sbFetch('current_work?on_conflict=sub_table', 'POST', {
+    sub_table: p.subTable, sku: p.sku, option_name: p.optionName, product_name: p.productName,
+    poly: p.poly, pcs: p.pcs !== '' ? p.pcs : null, bag_color: p.bagColor,
+    tier: p.tier !== '' ? parseInt(p.tier) || null : null,
+    location_code: p.location, category_small: p.categorySmall, scanned_at: new Date().toISOString()
+  });
+}
+        // { invoiceByOption, polyBySku, bagBySku, defectByCat }
+let sheetIndexLoading = null; // 로딩 Promise(중복 로드 방지)
+
+function preloadSheetIndex() {
+  if (sheetIndex) return Promise.resolve(sheetIndex);
+  if (sheetIndexLoading) return sheetIndexLoading;
+  if (SUPABASE_MODE) {
+    sheetIndexLoading = loadSupabaseIndex();
+    return sheetIndexLoading;
+  }
+  // Apps Script fallback
+  sheetIndexLoading = new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler((idx) => { sheetIndex = idx; resolve(idx); })
+      .withFailureHandler(reject).qualityGetFullIndex();
+  });
+  return sheetIndexLoading;
+}
+
+// 존 알파벳으로 tier 판별 (Code.gs qualityTierFromLocation_와 동일)
+// 대봉 단수 변환 (3단 높이=515, 4단 높이=380, Code.gs qualityConvertPcs_와 동일)
+// 4단→3단: ×515/380 (3단이 더 높아 더 들어감)
+// 3단→4단: ×380/515 (4단이 더 낮아 덜 들어감)
+function convertPcsLocal(pcs, fromTier) {
+  if (pcs == null) return null;
+  const n = Number(pcs);
+  if (isNaN(n) || n <= 0) return null;
+  const raw = fromTier === 4 ? n * 515 / 380 : n * 380 / 515;
+  return n < 15 ? Math.floor(raw) : Math.floor(raw / 5) * 5;
+}
+
+function tierFromLocation(loc) {
+  if (!loc) return null;
+  const zone = String(loc).charAt(0).toUpperCase();
+  if (['D','F','G','H'].indexOf(zone) !== -1) return 3;
+  if (['M','S'].indexOf(zone) !== -1) return null;
+  return 4;
+}
+
+// 대봉 작업 제외 로케이션: '33'으로 시작 or H90~H95 → 폴리만 입력, 대봉 pcs 입력 막음
+function isBagExcludedLocation(loc) {
+  if (!loc) return false;
+  const s = String(loc).trim().toUpperCase();
+  if (s.indexOf('33') === 0) return true;      // 33-1-1, 33-1-2 등
+  const m = s.match(/^H(\d+)/);                // H90~H95
+  if (m) {
+    const num = parseInt(m[1], 10);
+    if (num >= 90 && num <= 95) return true;
+  }
+  return false;
+}
+
+// 로컬 인덱스에서 옵션코드 조회 (서버 왕복 없음 → 즉시)
+function lookupLocal(optionCode) {
+  if (!sheetIndex) return null;
+  const invoice = sheetIndex.invoiceByOption[optionCode];
+  if (!invoice) return null;
+  const sku = invoice.sku;
+  const bag = sheetIndex.bagBySku[sku] || {};
+  const poly = sheetIndex.polyBySku[sku] || null;
+  const tier = tierFromLocation(invoice.location_code);
+  const cat = bag.category_small || '';
+  const defect = cat ? (sheetIndex.defectByCat[cat] || null) : null;
+  const pcs3 = (bag.pcs3 !== undefined) ? bag.pcs3 : null;
+  const pcs4 = (bag.pcs4 !== undefined) ? bag.pcs4 : null;
+  const pcsCur = tier === 3 ? pcs3 : (tier === 4 ? pcs4 : null);
+  return {
+    option_code: optionCode, option_name: invoice.option_name, product_name: invoice.product_name,
+    location_code: invoice.location_code, tier: tier, sku: sku,
+    category_large: '', category_small: cat, is_wanpoly: false,
+    poly_size: poly, pcs_per_bag_3tier: pcs3, pcs_per_bag_4tier: pcs4,
+    pcs_for_current_tier: pcsCur, confirm_count: 1, data_source: 'sheet',
+    defect_hint_text: defect ? defect.hint_text : null,
+    defect_hint_severity: defect ? defect.severity : null
+  };
+}
+
+async function handleBarcodeScan(rawBarcode) {
+  const optionCode = parseOptionCode(rawBarcode);
+
+  let data, error;
+
+  if (DUMMY_MODE) {
+    // 더미모드: 로컬 데이터에서 조회
+    data = DUMMY_SCAN_DATA[optionCode] || null;
+    error = null;
+  } else if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+    // 시트모드: 프리로드된 로컬 인덱스에서 즉시 조회(서버 왕복 없음)
+    try {
+      if (!sheetIndex) await preloadSheetIndex();  // 아직 로딩 전이면 이때만 대기
+      data = lookupLocal(optionCode);
+      error = null;
+    } catch (e) {
+      data = null;
+      error = e;
+    }
+  } else if (sbClient) {
+    const res = await sbClient
+      .from('v_barcode_scan_result')
+      .select('*')
+      .eq('option_code', optionCode)
+      .maybeSingle();
+    data = res.data;
+    error = res.error;
+  } else {
+    error = new Error('데이터 소스가 설정되지 않았습니다');
+  }
+
+  if (error) {
+    showToast('조회 중 오류가 발생했습니다');
+    console.error(error);
+    return;
+  }
+
+  if (!data) {
+    showToast('전표DB에서 이 옵션코드를 찾을 수 없습니다');
+    return;
+  }
+
+  currentScan = data;
+
+  if (data.tier === null) {
+    showToast('낱장존 상품입니다 (양품화 대상 아님)');
+    return;
+  }
+
+  if (data.is_wanpoly) {
+    renderWanpolyScreen(data);
+    return;
+  }
+
+  const hasValues = data.poly_size && data.pcs_for_current_tier != null;
+  if (hasValues) {
+    renderResultScreen(data);
+  } else {
+    renderNewSkuScreen(data);
+  }
+}
+
+function cancelToScan() {
+  currentScan = null;
+  selectedPolySize = null;
+  showScreen('screenScan');
+  focusBarcodeInput();
+}
+
+// ============================================================
+// 완폴리 화면
+// ============================================================
+function renderWanpolyScreen(data) {
+  document.getElementById('wpSku').textContent = data.sku;
+  document.getElementById('wpOption').textContent = `${data.option_name || ''} · ${data.product_name || ''}`;
+  showScreen('screenWanpoly');
+
+  // 소테이블로 완폴리 정보 전송
+  trySendToSubTable({ ...data, poly_size: '완폴리', pcs_for_current_tier: null });
+}
+
+async function submitWanpoly() {
+  const ok = await insertProcessingLog({
+    sku: currentScan.sku,
+    option_code: currentScan.option_code,
+    tier_used: currentScan.tier,
+    pcs: 0,
+    is_wanpoly: true
+  });
+  if (ok) {
+    showToast('완료 처리되었습니다');
+    cancelToScan();
+    loadTodayStat();
+  }
+}
+
+// ============================================================
+// 결과 화면(기존 값 있음)
+// ============================================================
+function bagColorCellClass(color) {
+  if (color === '투명') return 'bag-clear';
+  if (color === '초록') return 'bag-green';
+  return 'bag-orange';
+}
+
+function floorBoxClass(floor) {
+  if (floor === '3층') return 'floor-3f';
+  if (floor === '2층') return 'floor-2f';
+  return 'floor-b1'; // 지하/1층
+}
+
+// 화면 표시용 대봉색 이름(실제 대봉색: 3층=투명, 2층=초록, 지하=주황)
+function bagDisplayName(floor) {
+  if (floor === '3층') return '투명 대봉';
+  if (floor === '2층') return '초록 대봉';
+  return '주황 대봉';
+}
+
+function renderResultScreen(data) {
+  document.getElementById('resSku').textContent = data.sku;
+  document.getElementById('resOption').textContent = `${data.option_name || ''} · ${data.product_name || ''}`;
+
+  // 왼쪽 상단 층/대봉 색상 블록 — 상품 로케이션으로 층 판별 (테이블 층이 아님)
+  const floor = floorFromLocation(data.location_code) || currentTable.floor;
+  const floorBox = document.getElementById('resFloorBox');
+  floorBox.className = 'floor-box ' + floorBoxClass(floor);
+  document.getElementById('resFloorName').textContent = floor;
+  document.getElementById('resBagName').textContent = bagDisplayName(floor);
+
+  // 폴리 규격
+  document.getElementById('resPolySize').textContent = data.poly_size || '-';
+
+  // 대봉당 pcs
+  document.getElementById('resTierLabel').textContent = `한 대봉당 pcs (${data.tier}단)`;
+  document.getElementById('resPcs').textContent = data.pcs_for_current_tier != null ? `${data.pcs_for_current_tier}` : '-';
+
+  // 뱃지
+  const badgeRow = document.getElementById('resBadgeRow');
+  badgeRow.innerHTML = '';
+  if (data.confirm_count && data.confirm_count > 1) {
+    const b = document.createElement('span');
+    b.className = 'badge';
+    b.style.background = '#e0f2e9';
+    b.style.color = '#166534';
+    b.textContent = `✓ ${data.confirm_count}회 확인됨`;
+    badgeRow.appendChild(b);
+  }
+
+  // 불량 힌트 (오른쪽 영역)
+  const noteEl = document.getElementById('resDefectNote');
+  const spacerEl = document.getElementById('resRightSpacer');
+  if (data.defect_hint_text) {
+    const sevClass = data.defect_hint_severity >= 3 ? 'sev3' : (data.defect_hint_severity === 2 ? 'sev2' : 'sev1');
+    noteEl.className = `defect-note ${sevClass}`;
+    noteEl.textContent = `⚠️ ${data.defect_hint_text}`;
+    noteEl.classList.remove('hidden');
+    if (spacerEl) spacerEl.classList.add('hidden');
+  } else {
+    noteEl.classList.add('hidden');
+    if (spacerEl) spacerEl.classList.remove('hidden');
+  }
+
+  // 상품확인 버튼 링크
+  setPhotoLink('resPhotoLink', data.sku);
+
+  showScreen('screenResult');
+
+  // 소테이블로 스캔 정보 전송
+  trySendToSubTable(data);
+}
+
+// 상품확인 버튼 링크 공통 설정 (base URL 있으면 ?keyword_type=sku_code&keyword=SKU 자동 조합, 없으면 비활성)
+function setPhotoLink(elId, sku) {
+  const photoLink = document.getElementById(elId);
+  if (!photoLink) return;
+  if (PHOTO_SEARCH_BASE_URL) {
+    photoLink.href = `${PHOTO_SEARCH_BASE_URL}?keyword_type=sku_code&keyword=${encodeURIComponent(sku)}`;
+    photoLink.style.opacity = '1';
+    photoLink.style.pointerEvents = '';
   } else {
     photoLink.href = '#';
-    photoLink.classList.add('disabled');
+    photoLink.style.opacity = '0.4';
+    photoLink.style.pointerEvents = 'none';
   }
-
-  // 카테고리
-  const catWrap = document.getElementById('tCatWrap');
-  catWrap.innerHTML = data.category_small ? '<span class="card-cat">' + data.category_small + '</span>' : '';
-
-  // 대봉 색상
-  const bagColor = data.bag_color || '투명';
-  const colorClass = bagColor === '초록' ? 'c-green' : bagColor === '주황' ? 'c-orange' : 'c-white';
-  document.getElementById('colorBar').className = 'card-color-bar ' + colorClass;
-  document.getElementById('tBagBlock').className = 'bag-color-block ' + colorClass;
-  document.getElementById('tBagName').textContent = bagColor + ' 대봉';
-  document.getElementById('tBagSub').textContent = data.tier ? data.tier + '단' : '-';
-
-  document.getElementById('tPoly').textContent = data.poly || '-';
-  document.getElementById('tPcs').textContent = data.pcs != null ? data.pcs : '-';
-  document.getElementById('tPcsLabel').textContent = data.tier ? '대봉당 pcs (' + data.tier + '단)' : '대봉당 pcs';
-  document.getElementById('tLoc').textContent = data.location_code || '-';
-  document.getElementById('tTier').textContent = data.tier ? data.tier + '단' : '-';
-
-  // 시간 포맷
-  let timeStr = '-';
-  if (scanTime) {
-    try { timeStr = new Date(scanTime).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); } catch(e) { timeStr = scanTime; }
-  }
-  document.getElementById('tTime').textContent = '스캔 시각: ' + timeStr;
 }
+
+async function submitProcessing() {
+  const ok = await insertProcessingLog({
+    sku: currentScan.sku,
+    option_code: currentScan.option_code,
+    tier_used: currentScan.tier,
+    pcs: currentScan.pcs_for_current_tier,
+    is_wanpoly: false
+  });
+  if (ok) {
+    showToast('완료 처리되었습니다');
+    cancelToScan();
+    loadTodayStat();
+  }
+}
+
+// ============================================================
+// 신규 SKU 입력 화면
+// ============================================================
+async function renderNewSkuScreen(data) {
+  document.getElementById('newSku').textContent = data.sku;
+  document.getElementById('newOption').textContent = `${data.option_name || ''} · ${data.product_name || ''}`;
+
+  const bagColor = currentTable.bag_color;
+  const bagCell = document.getElementById('newBagColorCell');
+  bagCell.className = 'info-cell ' + bagColorCellClass(bagColor);
+  document.getElementById('newBagColor').textContent = bagColor;
+  document.getElementById('newTier').textContent = `${data.tier}단`;
+  document.getElementById('newPcsLabel').textContent = `${data.tier}단 기준 pcs 직접 입력`;
+
+  document.getElementById('newPcsInput').value = '';
+  selectedPolySize = null;
+  document.querySelectorAll('#newPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+
+  // 동일 소카 최근 평균값 힌트
+  const hintEl = document.getElementById('newCategoryHint');
+  if (data.category_small && !DUMMY_MODE && !SHEET_MODE && sbClient) {
+    const { data: siblings, error } = await sbClient
+      .from('sku_master')
+      .select('pcs_per_bag_3tier, pcs_per_bag_4tier')
+      .eq('category_small', data.category_small)
+      .not(data.tier === 3 ? 'pcs_per_bag_3tier' : 'pcs_per_bag_4tier', 'is', null)
+      .order('updated_at', { ascending: false })
+      .limit(10);
+
+    if (!error && siblings && siblings.length > 0) {
+      const key = data.tier === 3 ? 'pcs_per_bag_3tier' : 'pcs_per_bag_4tier';
+      const values = siblings.map(s => s[key]).filter(v => v != null);
+      if (values.length > 0) {
+        const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
+        hintEl.textContent = `💡 같은 카테고리(${data.category_small}) 최근 평균: 약 ${avg}pcs (참고용)`;
+        hintEl.classList.remove('hidden');
+      } else {
+        hintEl.classList.add('hidden');
+      }
+    } else {
+      hintEl.classList.add('hidden');
+    }
+  } else {
+    hintEl.classList.add('hidden');
+  }
+
+  setPhotoLink('newPhotoLink', data.sku);
+
+  showScreen('screenNewSku');
+}
+
+document.getElementById('newPolyBtnRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.poly-btn');
+  if (!btn) return;
+  document.querySelectorAll('#newPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  selectedPolySize = btn.dataset.size;
+});
+
+function adjustNewPcs(delta) {
+  const input = document.getElementById('newPcsInput');
+  const cur = parseInt(input.value) || 0;
+  input.value = Math.max(0, cur + delta);
+}
+
+async function submitNewSku() {
+  const pcsValue = parseInt(document.getElementById('newPcsInput').value);
+  if (!selectedPolySize) { showToast('폴리 규격을 선택해주세요'); return; }
+  if (!pcsValue || pcsValue <= 0) { showToast('pcs 값을 입력해주세요'); return; }
+
+  const tier = currentScan.tier;
+  const sku = currentScan.sku;
+
+  if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+    // 시트모드: 시트에 실제 저장 + 로컬 인덱스 즉시 갱신
+    const btn = document.querySelector('#screenNewSku .btn-primary');
+    if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
+    try {
+      await (SUPABASE_MODE ? saveToSupabase : saveNewSkuToSheet)({
+        sku: sku,
+        polySize: selectedPolySize,
+        tier: tier,
+        pcs: pcsValue,
+        categorySmall: currentScan.category_small || ''
+      });
+      // 로컬 프리로드 인덱스도 즉시 갱신(다음 스캔부터 기존값으로 나오게)
+      const otherPcs = convertPcsLocal(pcsValue, tier);
+      if (sheetIndex) {
+        sheetIndex.polyBySku[sku] = selectedPolySize;
+        if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: currentScan.category_small || '', pcs3: null, pcs4: null };
+        if (tier === 4) {
+          sheetIndex.bagBySku[sku].pcs4 = pcsValue;
+          if (otherPcs != null) sheetIndex.bagBySku[sku].pcs3 = otherPcs;
+        } else {
+          sheetIndex.bagBySku[sku].pcs3 = pcsValue;
+          if (otherPcs != null) sheetIndex.bagBySku[sku].pcs4 = otherPcs;
+        }
+      }
+      await insertProcessingLog({ sku, option_code: currentScan.option_code, tier_used: tier, pcs: pcsValue, is_wanpoly: false });
+      showToast('신규 값이 등록되었습니다');
+
+      // 등록된 값으로 바로 결과 화면 표시(다시 스캔 안 해도 됨)
+      currentScan.poly_size = selectedPolySize;
+      currentScan.pcs_for_current_tier = pcsValue;
+      if (tier === 3) { currentScan.pcs_per_bag_3tier = pcsValue; if (otherPcs != null) currentScan.pcs_per_bag_4tier = otherPcs; }
+      if (tier === 4) { currentScan.pcs_per_bag_4tier = pcsValue; if (otherPcs != null) currentScan.pcs_per_bag_3tier = otherPcs; }
+      renderResultScreen(currentScan);
+      loadTodayStat();
+    } catch (e) {
+      console.error(e);
+      showToast('저장 실패 — 다시 시도해주세요');
+    } finally {
+      if (btn) { btn.disabled = false; btn.textContent = '신규 값 등록 및 완료'; }
+    }
+    return;
+  }
+
+  if (DUMMY_MODE || !sbClient) {
+    await insertProcessingLog({ sku, option_code: currentScan.option_code, tier_used: tier, pcs: pcsValue, is_wanpoly: false });
+    showToast('[더미] 신규 값이 등록되었습니다');
+    const otherPcsDummy = convertPcsLocal(pcsValue, tier);
+    currentScan.poly_size = selectedPolySize;
+    currentScan.pcs_for_current_tier = pcsValue;
+    if (tier === 3) { currentScan.pcs_per_bag_3tier = pcsValue; if (otherPcsDummy != null) currentScan.pcs_per_bag_4tier = otherPcsDummy; }
+    if (tier === 4) { currentScan.pcs_per_bag_4tier = pcsValue; if (otherPcsDummy != null) currentScan.pcs_per_bag_3tier = otherPcsDummy; }
+    renderResultScreen(currentScan);
+    loadTodayStat();
+    return;
+  }
+
+  // 기존 SKU 마스터에 값이 있는지(동시입력 충돌) 재확인
+  const { data: existing, error: fetchErr } = await sbClient
+    .from('sku_master')
+    .select('poly_size, pcs_per_bag_3tier, pcs_per_bag_4tier')
+    .eq('sku', sku)
+    .maybeSingle();
+
+  if (fetchErr) { showToast('확인 중 오류가 발생했습니다'); return; }
+
+  const existingPcs = existing ? (tier === 3 ? existing.pcs_per_bag_3tier : existing.pcs_per_bag_4tier) : null;
+
+  if (existing && existing.poly_size && existingPcs != null) {
+    // 이미 다른 테이블에서 먼저 입력됨 → 값이 다르면 충돌 큐로
+    const conflict = existing.poly_size !== selectedPolySize || existingPcs !== pcsValue;
+    if (conflict) {
+      await sbClient.from('sku_conflict_queue').insert({
+        sku: sku,
+        submitted_by: currentTable.table_code,
+        submitted_poly_size: selectedPolySize,
+        submitted_pcs_3tier: tier === 3 ? pcsValue : null,
+        submitted_pcs_4tier: tier === 4 ? pcsValue : null
+      });
+      showToast('다른 값이 이미 등록되어 있어 관리자 확인 요청을 등록했습니다');
+      cancelToScan();
+      return;
+    } else {
+      // 값이 같음 → confirm_count 증가
+      await sbClient.from('sku_master')
+        .update({ confirm_count: (existing.confirm_count || 1) + 1, updated_at: new Date().toISOString() })
+        .eq('sku', sku);
+    }
+  } else {
+    // 최초 입력 → upsert
+    const updatePayload = {
+      sku: sku,
+      poly_size: selectedPolySize,
+      first_input_table: currentTable.table_code,
+      data_source: 'worker_input',
+      updated_at: new Date().toISOString()
+    };
+    updatePayload[tier === 3 ? 'pcs_per_bag_3tier' : 'pcs_per_bag_4tier'] = pcsValue;
+
+    const { error: upsertErr } = await sbClient.from('sku_master').upsert(updatePayload, { onConflict: 'sku' });
+    if (upsertErr) { showToast('저장 중 오류가 발생했습니다'); console.error(upsertErr); return; }
+  }
+
+  // 처리 로그 기록
+  const ok = await insertProcessingLog({
+    sku: sku,
+    option_code: currentScan.option_code,
+    tier_used: tier,
+    pcs: pcsValue,
+    is_wanpoly: false
+  });
+
+  if (ok) {
+    showToast('신규 값이 등록되고 완료 처리되었습니다');
+    cancelToScan();
+    loadTodayStat();
+  }
+}
+
+// ============================================================
+// 변경 요청
+// ============================================================
+let crSelectedPoly = null;
+
+function openChangeRequest() {
+  crSelectedPoly = null;
+  document.getElementById('crPcsInput').value = '';
+  document.getElementById('crReasonInput').value = '';
+  document.querySelectorAll('#crPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('changeRequestModal').classList.add('show');
+}
+
+function closeChangeRequest() {
+  document.getElementById('changeRequestModal').classList.remove('show');
+}
+
+document.getElementById('crPolyBtnRow').addEventListener('click', (e) => {
+  const btn = e.target.closest('.poly-btn');
+  if (!btn) return;
+  document.querySelectorAll('#crPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  crSelectedPoly = btn.dataset.size;
+});
+
+async function submitChangeRequest() {
+  const requestedPcs = parseInt(document.getElementById('crPcsInput').value);
+  const reason = document.getElementById('crReasonInput').value.trim();
+
+  if (!crSelectedPoly && !requestedPcs) {
+    showToast('변경할 값을 하나 이상 입력해주세요');
+    return;
+  }
+
+  const tier = currentScan.tier;
+
+  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+    showToast('[더미] 변경 요청이 제출되었습니다');
+    closeChangeRequest();
+    cancelToScan();
+    return;
+  }
+
+  const payload = {
+    sku: currentScan.sku,
+    requested_by: currentTable.table_code,
+    current_poly_size: currentScan.poly_size,
+    current_pcs_3tier: tier === 3 ? currentScan.pcs_for_current_tier : null,
+    current_pcs_4tier: tier === 4 ? currentScan.pcs_for_current_tier : null,
+    requested_poly_size: crSelectedPoly || currentScan.poly_size,
+    requested_pcs_3tier: tier === 3 ? (requestedPcs || currentScan.pcs_for_current_tier) : null,
+    requested_pcs_4tier: tier === 4 ? (requestedPcs || currentScan.pcs_for_current_tier) : null,
+    reason: reason || null
+  };
+
+  const { error } = await sbClient.from('change_request').insert(payload);
+  if (error) {
+    showToast('요청 제출 중 오류가 발생했습니다');
+    console.error(error);
+    return;
+  }
+
+  showToast('변경 요청이 제출되었습니다. 관리자 확인 후 반영됩니다');
+  closeChangeRequest();
+  cancelToScan();
+}
+
+// ============================================================
+// 공통: 처리 로그 저장
+// ============================================================
+async function insertProcessingLog({ sku, option_code, tier_used, pcs, is_wanpoly }) {
+  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+    // 더미모드: 로컬 카운터만 증가
+    dummyTodayPcs += (pcs || 0);
+    dummyTodayCount += 1;
+    return true;
+  }
+  const { error } = await sbClient.from('processing_log').insert({
+    table_code: currentTable.table_code,
+    sku: sku,
+    option_code: option_code,
+    tier_used: tier_used,
+    pcs: pcs,
+    is_wanpoly: is_wanpoly
+  });
+  if (error) {
+    showToast('저장 중 오류가 발생했습니다');
+    console.error(error);
+    return false;
+  }
+  return true;
+}
+
+// ============================================================
+// 토스트
+// ============================================================
+let toastTimer = null;
+function showToast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2200);
+}
+
+// ============================================================
+// 시작
+// ============================================================
+(function init() {
+  // 관리자 링크는 onclick=openAdmin()으로 동작(별도 URL 불필요)
+
+  // 더미모드 표시
+  if (DUMMY_MODE) {
+    console.log('%c[더미모드] Supabase 없이 테스트 중입니다.', 'color:#d97706;font-weight:bold');
+    console.log('테스트용 바코드: i1822S1702693(재고42·기존값4단), i1822S2772486(재고3·경고), i1822S2725395(재고0·차단), i1822S9999999(재고15·신규)');
+  }
+
+  renderTableGrid();
+  showScreen('screenHome');
+})();
 </script>
 </body>
 </html>
