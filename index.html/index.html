@@ -307,6 +307,7 @@
     font-weight: 600;
     cursor: pointer;
   }
+  .btn-back { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 600; padding: 8px 0; cursor: pointer; margin-bottom: 8px; display: block; }
   .btn-secondary {
     width: 100%;
     padding: 12px;
@@ -570,6 +571,7 @@
 
   <!-- ============== 화면 1: 테이블 선택 ============== -->
   <div id="screenTableSelect" class="hidden">
+    <button class="btn-back" onclick="goHome()">← 홈으로</button>
     <div class="floor-label">3층</div>
     <div class="table-select-grid" id="grid3f"></div>
     <div class="floor-label">2층</div>
@@ -688,6 +690,7 @@
 
   <!-- ============== 화면 2: 스캔 대기 ============== -->
   <div id="screenScan" class="hidden">
+    <button class="btn-back" onclick="showTableSelect()">← 테이블 선택</button>
     <div class="today-stat">
       <span id="currentTableLabel">-</span>
       <span>오늘 <b id="todayPcs">0</b> pcs · <b id="todayCount">0</b>건</span>
