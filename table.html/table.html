@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>양품화 소테이블</title>
+<style>
+  :root { --accent:#2563eb; --border:#e2e2e6; --text:#1a1a1a; --text-sub:#6b7280; --bg:#f5f5f7; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; display:flex; flex-direction:column; }
+  header { background:#1a1a2e; color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; }
+  header .title { font-size:16px; font-weight:700; }
+  header .sub-id { background:var(--accent); padding:4px 12px; border-radius:8px; font-size:14px; font-weight:700; }
+  .container { flex:1; max-width:500px; margin:0 auto; padding:20px; width:100%; }
+
+  .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
+  .status-dot.live { background:#22c55e; animation:pulse 1.5s infinite; }
+  .status-dot.off { background:#d1d5db; }
+  @keyframes pulse { 0%,100%{opacity:1;} 50%{opacity:0.4;} }
+  .status-text { font-size:11px; color:#aaa; }
+
+  .waiting { text-align:center; padding:60px 20px; }
+  .waiting-icon { font-size:60px; margin-bottom:16px; }
+  .waiting-title { font-size:18px; font-weight:600; margin-bottom:8px; }
+  .waiting-desc { font-size:14px; color:var(--text-sub); }
+
+  .card { background:#fff; border-radius:16px; border:1px solid var(--border); overflow:hidden; }
+  .card-color-bar { height:12px; }
+  .card-color-bar.c-white { background:#e0e0e0; }
+  .card-color-bar.c-green { background:#7cb342; }
+  .card-color-bar.c-orange { background:#ff9a52; }
+  .card-body { padding:20px; }
+  .card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
+  .card-sku { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .card-option { font-size:14px; color:var(--text-sub); word-break:keep-all; }
+  .card-cat { display:inline-block; font-size:12px; background:#eef2ff; color:#3730a3; padding:2px 8px; border-radius:8px; margin-bottom:12px; }
+  .btn-photo { flex-shrink:0; background:#2563eb; color:#fff; text-decoration:none; font-size:14px; font-weight:700; padding:10px 16px; border-radius:10px; white-space:nowrap; box-shadow:0 2px 6px rgba(37,99,235,0.3); }
+  .btn-photo:active { transform:scale(0.97); }
+  .btn-photo.disabled { opacity:0.4; pointer-events:none; }
+
+  .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .info-box { background:var(--bg); border-radius:12px; padding:14px; text-align:center; }
+  .info-label { font-size:12px; color:var(--text-sub); margin-bottom:4px; }
+  .info-value { font-size:24px; font-weight:800; }
+
+  .bag-color-block { border-radius:12px; padding:16px; text-align:center; margin-bottom:16px; }
+  .bag-color-block.c-white { background:#ffffff; border:2px solid #ccc; color:#333; }
+  .bag-color-block.c-green { background:#7cb342; color:#fff; }
+  .bag-color-block.c-orange { background:#ff9a52; color:#fff; }
+  .bag-color-name { font-size:20px; font-weight:700; }
+  .bag-color-sub { font-size:13px; opacity:0.8; }
+
+  .scan-time { text-align:center; font-size:12px; color:var(--text-sub); margin-top:12px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div>
+    <div class="title">양품화</div>
+    <div style="display:flex; align-items:center; margin-top:4px;">
+      <span class="status-dot live" id="statusDot"></span>
+      <span class="status-text" id="statusText">실시간 연결 중</span>
+    </div>
+  </div>
+  <div class="sub-id" id="subBadge">-</div>
+</header>
+
+<div class="container">
+  <div id="waitingView" class="waiting">
+    <div class="waiting-icon">📦</div>
+    <div class="waiting-title">대기 중</div>
+    <div class="waiting-desc">스캔 담당자가 상품을 스캔하면<br>여기에 자동으로 표시됩니다</div>
+  </div>
+
+  <div id="infoView" style="display:none;">
+    <div class="card">
+      <div class="card-color-bar" id="colorBar"></div>
+      <div class="card-body">
+        <div class="card-top">
+          <div>
+            <div class="card-sku" id="tSku">-</div>
+            <div class="card-option" id="tOption">-</div>
+          </div>
+          <a href="#" id="tPhotoLink" class="btn-photo" target="_blank">상품확인</a>
+        </div>
+        <div id="tCatWrap"></div>
+
+        <div class="bag-color-block" id="tBagBlock">
+          <div class="bag-color-name" id="tBagName">-</div>
+          <div class="bag-color-sub" id="tBagSub">-</div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-label">폴리 규격</div>
+            <div class="info-value" id="tPoly">-</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label" id="tPcsLabel">대봉당 pcs</div>
+            <div class="info-value" id="tPcs">-</div>
+          </div>
+        </div>
+
+        <div class="info-grid">
+          <div class="info-box">
+            <div class="info-label">로케이션</div>
+            <div class="info-value" style="font-size:16px;" id="tLoc">-</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label">단수</div>
+            <div class="info-value" id="tTier">-</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="scan-time" id="tTime">-</div>
+  </div>
+</div>
+
+<script>
+// ★ Supabase 설정
+const SUPABASE_URL = 'https://zscvnuwlhkbehmnfcsid.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpzY3ZudXdsaGtiZWhtbmZjc2lkIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODU0ODczMTMsImV4cCI6MjEwMTA2MzMxM30.74_Ftpek4somkdq4iGrbExVx8o2EUVLSk61qp8fj1qM';
+
+// ★ 상품확인 URL — 비면 버튼 비활성
+const PHOTO_SEARCH_BASE_URL = 'https://admin.a-bly.com/mobile/goods';
+
+// URL 파라미터에서 소테이블 ID 추출 (?t=3층-1-3)
+const params = new URLSearchParams(window.location.search);
+const subTable = params.get('t');
+let lastScanTime = '';
+
+if (subTable) {
+  document.getElementById('subBadge').textContent = subTable;
+  startPolling();
+} else {
+  document.getElementById('waitingView').innerHTML =
+    '<div class="waiting-icon">⚠️</div>' +
+    '<div class="waiting-title">소테이블 미지정</div>' +
+    '<div class="waiting-desc">QR코드를 통해 접속해주세요</div>';
+}
+
+function startPolling() {
+  fetchInfo();
+  setInterval(fetchInfo, 5000);
+}
+
+async function fetchInfo() {
+  try {
+    const url = `${SUPABASE_URL}/rest/v1/current_work?sub_table=eq.${encodeURIComponent(subTable)}&select=*&limit=1`;
+    const resp = await fetch(url, {
+      headers: {
+        'apikey': SUPABASE_ANON_KEY,
+        'Authorization': 'Bearer ' + SUPABASE_ANON_KEY
+      }
+    });
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    const rows = await resp.json();
+    document.getElementById('statusDot').className = 'status-dot live';
+    document.getElementById('statusText').textContent = '실시간 연결 중';
+
+    if (!rows.length || !rows[0].sku) {
+      document.getElementById('waitingView').style.display = '';
+      document.getElementById('infoView').style.display = 'none';
+      return;
+    }
+    renderInfo(rows[0]);
+  } catch (e) {
+    console.error('조회 실패:', e);
+    document.getElementById('statusDot').className = 'status-dot off';
+    document.getElementById('statusText').textContent = '연결 끊김';
+  }
+}
+
+function renderInfo(data) {
+  const scanTime = data.scanned_at || '';
+  if (scanTime === lastScanTime) return;
+  lastScanTime = scanTime;
+
+  document.getElementById('waitingView').style.display = 'none';
+  document.getElementById('infoView').style.display = '';
+
+  document.getElementById('tSku').textContent = data.sku || '-';
+  document.getElementById('tOption').textContent = (data.option_name || '') + ' · ' + (data.product_name || '');
+
+  // 상품확인
+  const photoLink = document.getElementById('tPhotoLink');
+  if (PHOTO_SEARCH_BASE_URL && data.sku) {
+    photoLink.href = PHOTO_SEARCH_BASE_URL + '?keyword_type=sku_code&keyword=' + encodeURIComponent(data.sku);
+    photoLink.classList.remove('disabled');
+  } else {
+    photoLink.href = '#';
+    photoLink.classList.add('disabled');
+  }
+
+  // 카테고리
+  const catWrap = document.getElementById('tCatWrap');
+  catWrap.innerHTML = data.category_small ? '<span class="card-cat">' + data.category_small + '</span>' : '';
+
+  // 대봉 색상
+  const bagColor = data.bag_color || '투명';
+  const colorClass = bagColor === '초록' ? 'c-green' : bagColor === '주황' ? 'c-orange' : 'c-white';
+  document.getElementById('colorBar').className = 'card-color-bar ' + colorClass;
+  document.getElementById('tBagBlock').className = 'bag-color-block ' + colorClass;
+  document.getElementById('tBagName').textContent = bagColor + ' 대봉';
+  document.getElementById('tBagSub').textContent = data.tier ? data.tier + '단' : '-';
+
+  document.getElementById('tPoly').textContent = data.poly || '-';
+  document.getElementById('tPcs').textContent = data.pcs != null ? data.pcs : '-';
+  document.getElementById('tPcsLabel').textContent = data.tier ? '대봉당 pcs (' + data.tier + '단)' : '대봉당 pcs';
+  document.getElementById('tLoc').textContent = data.location_code || '-';
+  document.getElementById('tTier').textContent = data.tier ? data.tier + '단' : '-';
+
+  // 시간 포맷
+  let timeStr = '-';
+  if (scanTime) {
+    try { timeStr = new Date(scanTime).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); } catch(e) { timeStr = scanTime; }
+  }
+  document.getElementById('tTime').textContent = '스캔 시각: ' + timeStr;
+}
+</script>
+</body>
+</html>
