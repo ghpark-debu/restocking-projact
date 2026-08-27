@@ -1735,8 +1735,6 @@ function trySendToSubTable(data) {
     categorySmall: data.category_small || ''
   };
 
-    }
-
   // 2) Supabase 전송 (GitHub Pages 소테이블 화면용)
   pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
 }
