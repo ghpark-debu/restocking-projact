@@ -66,7 +66,10 @@
       <span class="status-text" id="statusText">실시간 연결 중</span>
     </div>
   </div>
-  <div class="sub-id" id="subBadge">-</div>
+  <div style="display:flex; align-items:center; gap:8px;">
+    <button onclick="forceRefresh()" style="background:none; border:none; color:#aaa; font-size:16px; cursor:pointer;" title="새로고침">🔄</button>
+    <div class="sub-id" id="subBadge">-</div>
+  </div>
 </header>
 
 <div class="container">
@@ -173,6 +176,11 @@ if (subTable) {
 function startPolling() {
   fetchInfo();
   setInterval(fetchInfo, 5000);
+}
+
+function forceRefresh() {
+  lastScanTime = '';
+  fetchInfo();
 }
 
 async function fetchInfo() {
