@@ -5,29 +5,31 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>소테이블 QR코드 생성</title>
 <style>
+  :root { --apple-blue:#007AFF; --apple-gray5:#E5E5EA; --apple-gray6:#F2F2F7; --apple-text:#1C1C1E; --apple-text-sub:#8E8E93; --apple-bg:#F2F2F7; --apple-card:#FFFFFF; --apple-shadow:0 1px 3px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.04); --apple-radius:12px; }
   * { box-sizing:border-box; margin:0; padding:0; }
-  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif; background:#f5f5f7; color:#1a1a1a; padding:20px; }
-  h1 { font-size:20px; margin-bottom:4px; }
-  .desc { font-size:14px; color:#6b7280; margin-bottom:20px; }
-  .setup { background:#fff; border:1px solid #e2e2e6; border-radius:12px; padding:20px; margin-bottom:20px; }
-  .setup label { font-size:14px; font-weight:600; display:block; margin-bottom:6px; }
-  .hint { font-size:12px; color:#6b7280; margin-top:-4px; margin-bottom:12px; }
+  body { font-family:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Helvetica Neue',sans-serif; background:var(--apple-bg); color:var(--apple-text); padding:20px; -webkit-font-smoothing:antialiased; }
+  h1 { font-size:22px; font-weight:700; letter-spacing:-0.3px; margin-bottom:4px; }
+  .desc { font-size:14px; color:var(--apple-text-sub); margin-bottom:20px; }
+  .setup { background:var(--apple-card); border:none; border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:var(--apple-shadow); }
+  .setup label { font-size:13px; font-weight:600; display:block; margin-bottom:6px; color:var(--apple-text-sub); text-transform:uppercase; letter-spacing:0.3px; }
+  .hint { font-size:12px; color:var(--apple-text-sub); margin-top:-4px; margin-bottom:12px; }
   .btn-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
-  .btn-opt { padding:10px 16px; border:1.5px solid #e2e2e6; border-radius:10px; background:#fff; font-size:14px; font-weight:600; color:#6b7280; cursor:pointer; }
-  .btn-opt.active { border-color:#2563eb; color:#2563eb; background:#eef2ff; }
-  .btn-gen { width:100%; padding:14px; font-size:15px; font-weight:600; background:#2563eb; color:#fff; border:none; border-radius:10px; cursor:pointer; margin-bottom:8px; }
-  .btn-print { width:100%; padding:14px; font-size:15px; font-weight:600; background:#fff; color:#2563eb; border:1.5px solid #2563eb; border-radius:10px; cursor:pointer; }
+  .btn-opt { padding:10px 16px; border:none; border-radius:var(--apple-radius); background:var(--apple-gray6); font-size:14px; font-weight:600; color:var(--apple-text-sub); cursor:pointer; transition:all 0.2s; }
+  .btn-opt.active { background:var(--apple-blue); color:#fff; }
+  .btn-opt:active { transform:scale(0.96); }
+  .btn-gen { width:100%; padding:14px; font-size:16px; font-weight:600; background:var(--apple-blue); color:#fff; border:none; border-radius:var(--apple-radius); cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
+  .btn-gen:active { transform:scale(0.98); }
+  .btn-print { width:100%; padding:14px; font-size:15px; font-weight:600; background:var(--apple-card); color:var(--apple-blue); border:none; border-radius:var(--apple-radius); cursor:pointer; box-shadow:var(--apple-shadow); }
   .qr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
-  .qr-card { background:#fff; border:1px solid #e2e2e6; border-radius:12px; padding:16px; text-align:center; }
-  .qr-label { font-size:18px; font-weight:700; margin-bottom:10px; }
-  .qr-img { margin-bottom:8px; }
+  .qr-card { background:var(--apple-card); border:none; border-radius:16px; padding:16px; text-align:center; box-shadow:var(--apple-shadow); }
+  .qr-label { font-size:18px; font-weight:700; margin-bottom:10px; letter-spacing:-0.2px; }
+  .qr-img { margin-bottom:8px; border-radius:8px; }
   .qr-url { display:none !important; }
   @media print {
     body { padding:0; background:#fff; }
     .setup, h1, .desc { display:none !important; }
-    .qr-url { display:none !important; }
     .qr-grid { grid-template-columns:repeat(4, 1fr); gap:8px; }
-    .qr-card { border:1px solid #ccc; padding:8px; page-break-inside:avoid; }
+    .qr-card { box-shadow:none; border:1px solid #ddd; padding:8px; page-break-inside:avoid; }
     .qr-label { font-size:14px; }
   }
 </style>
