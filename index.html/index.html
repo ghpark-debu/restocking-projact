@@ -4,507 +4,174 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>양품화 작업</title>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
+  /* ===== Apple Design System ===== */
   :root {
-    --color-3f: #e8f7f3;
-    --color-3f-border: #4fb8a0;
-    --color-2f: #eef6e8;
-    --color-2f-border: #7cb342;
-    --bg: #f4f5f7;
-    --card: #ffffff;
-    --text: #1a1a1a;
-    --text-sub: #666;
-    --border: #ddd;
-    --accent: #2563eb;
-    --danger: #dc2626;
-    --warn: #d97706;
-    --ok: #16a34a;
+    --apple-blue: #007AFF;
+    --apple-green: #34C759;
+    --apple-red: #FF3B30;
+    --apple-orange: #FF9500;
+    --apple-gray: #8E8E93;
+    --apple-gray4: #D1D1D6;
+    --apple-gray5: #E5E5EA;
+    --apple-gray6: #F2F2F7;
+    --apple-bg: #F2F2F7;
+    --apple-card: #FFFFFF;
+    --apple-text: #1C1C1E;
+    --apple-text3: #48484A;
+    --apple-text-sub: #8E8E93;
+    --apple-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 2px 8px rgba(0,0,0,0.04);
+    --apple-shadow-lg: 0 4px 16px rgba(0,0,0,0.08);
+    --apple-radius: 12px;
+    --apple-radius-lg: 16px;
+    --accent: var(--apple-blue);
+    --border: var(--apple-gray5);
+    --text: var(--apple-text);
+    --text-sub: var(--apple-text-sub);
+    --bg: var(--apple-bg);
   }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "Malgun Gothic", sans-serif;
-    background: var(--bg);
-    color: var(--text);
-    padding-bottom: 40px;
-  }
-  header {
-    background: #1a1a2e;
-    color: #fff;
-    padding: 14px 16px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    position: sticky;
-    top: 0;
-    z-index: 100;
-  }
-  header .title { font-size: 16px; font-weight: 600; }
-  header .table-badge {
-    font-size: 13px;
-    background: rgba(255,255,255,0.15);
-    padding: 4px 10px;
-    border-radius: 20px;
-    cursor: pointer;
-  }
-  .container { max-width: 480px; margin: 0 auto; padding: 16px; }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, 'SF Pro Display', BlinkMacSystemFont, 'Helvetica Neue', sans-serif; background: var(--apple-bg); color: var(--apple-text); -webkit-font-smoothing: antialiased; }
 
-  /* 테이블 선택 화면 */
-  .table-select-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    margin-top: 12px;
-  }
-  .floor-label {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text-sub);
-    margin: 18px 0 8px;
-  }
-  .table-btn {
-    padding: 18px 0;
-    border-radius: 12px;
-    border: 1.5px solid var(--border);
-    background: #fff;
-    font-size: 15px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .table-btn.floor3 { background: var(--color-3f); border-color: var(--color-3f-border); }
-  .table-btn.floor2 { background: var(--color-2f); border-color: var(--color-2f-border); }
+  header { background: rgba(26,26,46,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
+  header .title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
+  .table-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .container { max-width: 680px; margin: 0 auto; padding: 20px 16px; }
 
-  /* 스캔 화면 */
-  .scan-box {
-    background: var(--card);
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    margin-bottom: 14px;
-  }
-  .scan-box input {
-    width: 100%;
-    font-size: 18px;
-    padding: 14px;
-    border: 2px solid var(--accent);
-    border-radius: 10px;
-    text-align: center;
-  }
-  .scan-hint { font-size: 12px; color: var(--text-sub); text-align: center; margin-top: 8px; }
+  .btn-primary { width: 100%; padding: 15px; font-size: 17px; font-weight: 600; background: var(--apple-blue); color: #fff; border: none; border-radius: var(--apple-radius); cursor: pointer; transition: all 0.2s; }
+  .btn-primary:active { transform: scale(0.98); }
+  .btn-primary:disabled { background: var(--apple-gray4); cursor: default; transform: none; }
+  .btn-secondary { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; background: var(--apple-card); color: var(--apple-blue); border: none; border-radius: var(--apple-radius); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .btn-secondary:active { transform: scale(0.98); }
+  .btn-back { background: none; border: none; color: var(--apple-blue); font-size: 15px; font-weight: 500; padding: 8px 0; cursor: pointer; margin-bottom: 8px; display: block; }
 
-  /* ===== 소테이블 슬롯 ===== */
-  .sub-table-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-  .sub-slot { padding: 10px 4px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; text-align: center; font-size: 14px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
-  .sub-slot.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
-  .sub-slot:active { transform: scale(0.97); }
-
-  .today-stat {
-    display: flex;
-    justify-content: space-between;
-    font-size: 13px;
-    color: var(--text-sub);
-    background: #fff;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-  }
-  .today-stat b { color: var(--text); }
-
-  /* 결과 카드 */
-  .result-card {
-    background: var(--card);
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
-    margin-bottom: 14px;
-  }
-  .result-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .result-header .sku { font-weight: 700; font-size: 16px; }
-  .result-header .option { font-size: 13px; color: var(--text-sub); }
-
-  .badge-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
-  .badge {
-    font-size: 12px;
-    padding: 4px 10px;
-    border-radius: 20px;
-    font-weight: 600;
-  }
-  .badge.wanpoly { background: #fff3cd; color: #856404; }
-  .badge.new { background: #fde8e8; color: var(--danger); }
-  .badge.defect1 { background: #fff3cd; color: #856404; }
-  .badge.defect2 { background: #ffe0cc; color: #b45309; }
-  .badge.defect3 { background: #fde2e2; color: #b91c1c; }
-
-  .info-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 8px;
-    margin-bottom: 14px;
-  }
-  .info-cell {
-    border-radius: 10px;
-    padding: 10px 12px;
-  }
-  .info-cell .label { font-size: 11px; opacity: 0.75; margin-bottom: 2px; }
-  .info-cell .value { font-size: 15px; font-weight: 600; }
-  .info-cell.bag-clear { background: #f0f0f0; color: #555; }
-  .info-cell.bag-green { background: #e8f5e0; color: #2e5c1a; }
-  .info-cell.bag-orange { background: #ffe9d6; color: #a3520a; }
-  .info-cell.neutral { background: #f5f5f7; color: var(--text); }
-
-  .pcs-highlight {
-    background: #e7f0ff;
-    color: #1e40af;
-    border-radius: 10px;
-    padding: 14px;
-    margin-bottom: 14px;
-    text-align: center;
-  }
-  .pcs-highlight .label { font-size: 12px; opacity: 0.8; margin-bottom: 4px; }
-  .pcs-highlight .value { font-size: 26px; font-weight: 700; }
-
-  /* ===== 새 좌우 2분할 결과 레이아웃 ===== */
-  .result-top {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    gap: 10px;
-    margin-bottom: 12px;
-  }
-  .result-top-left .sku { font-weight: 700; font-size: 16px; }
-  .result-top-left .option { font-size: 13px; color: var(--text-sub); margin-top: 2px; }
-  .btn-confirm {
-    flex-shrink: 0;
-    background: var(--accent);
-    color: #fff;
-    text-decoration: none;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 12px 18px;
-    border-radius: 10px;
-    white-space: nowrap;
-    box-shadow: 0 2px 6px rgba(37,99,235,0.3);
-  }
-  .btn-confirm:active { transform: scale(0.97); }
-
-  .split-layout {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 12px;
-    margin-bottom: 16px;
-  }
-  .split-left, .split-right {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-  }
-  .split-right { border-left: 1px solid var(--border); padding-left: 12px; }
-
-  .floor-box {
-    align-self: stretch;
-    text-align: center;
-    font-size: 15px;
-    font-weight: 700;
-    padding: 18px 14px;
-    border-radius: 12px;
-    border: 3px solid #ccc;
-    position: relative;
-  }
-  .floor-box .floor-name { font-size: 13px; opacity: 0.85; }
-  .floor-box .bag-name { font-size: 18px; font-weight: 800; margin-top: 4px; }
-  /* 실제 대봉 색을 크게 보여줌: 3층=투명(흰), 2층=초록, 지하=주황(살구) */
-  .floor-box.floor-3f { background: #ffffff; color: #333; border-color: #999; }
-  .floor-box.floor-2f { background: #7cb342; color: #fff; border-color: #5f9230; }
-  .floor-box.floor-b1 { background: #ff9a52; color: #fff; border-color: #e07a2c; }
-
-  .split-info { }
-  .split-label { font-size: 12px; color: var(--text-sub); margin-bottom: 4px; }
-  .split-value { font-size: 20px; font-weight: 700; }
-  .split-value.big { font-size: 30px; color: #1e40af; }
-
-  .split-hint { font-size: 12px; color: var(--text-sub); line-height: 1.6; }
-  .split-right-spacer { display: flex; align-items: center; height: 100%; }
-
-  .pcs-adjust { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; }
-  .pcs-adjust button {
-    width: 44px; height: 44px;
-    border-radius: 10px;
-    border: 1.5px solid var(--border);
-    background: #fff;
-    font-size: 18px;
-  }
-  .pcs-adjust input {
-    flex: 1;
-    text-align: center;
-    font-size: 18px;
-    font-weight: 600;
-    padding: 10px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-  }
-
-  .defect-note {
-    display: flex;
-    align-items: flex-start;
-    gap: 8px;
-    border-radius: 10px;
-    padding: 10px 12px;
-    margin-bottom: 14px;
-    font-size: 13px;
-  }
-  .defect-note.sev1 { background: #fff8e1; color: #856404; }
-  .defect-note.sev2 { background: #ffedd5; color: #9a3412; }
-  .defect-note.sev3 { background: #fee2e2; color: #991b1b; }
-
-  .photo-link {
-    display: inline-block;
-    font-size: 13px;
-    color: var(--accent);
-    text-decoration: none;
-    margin-bottom: 14px;
-  }
-
-  .form-group { margin-bottom: 12px; }
-  .form-group label { font-size: 13px; color: var(--text-sub); display: block; margin-bottom: 6px; }
-  select, .form-group input[type=number] {
-    width: 100%;
-    padding: 12px;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 15px;
-  }
-  .poly-btn-row { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-  .poly-btn {
-    padding: 10px 0;
-    border-radius: 8px;
-    border: 1.5px solid var(--border);
-    background: #fff;
-    font-size: 13px;
-  }
-  .poly-btn.selected { border-color: var(--accent); color: var(--accent); border-width: 2px; }
-
-  .new-sku-warning {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    background: #fff3cd;
-    color: #856404;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-bottom: 14px;
-    font-size: 13px;
-    font-weight: 600;
-  }
-  /* 신규 SKU 화면 전체 시각 구분 */
-  #screenNewSku .result-card {
-    border: 3px solid #d97706;
-    background: #fffbeb;
-  }
-  #screenNewSku .result-top { margin-bottom: 4px; }
-    font-weight: 600;
-  }
-
-  .btn-primary {
-    width: 100%;
-    padding: 14px;
-    background: var(--accent);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 600;
-    cursor: pointer;
-  }
-  .btn-back { background: none; border: none; color: var(--accent); font-size: 14px; font-weight: 600; padding: 8px 0; cursor: pointer; margin-bottom: 8px; display: block; }
-  .btn-secondary {
-    width: 100%;
-    padding: 12px;
-    background: #fff;
-    color: var(--text-sub);
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 14px;
-    margin-top: 8px;
-    cursor: pointer;
-  }
-  .btn-wanpoly-done {
-    width: 100%;
-    padding: 16px;
-    background: var(--ok);
-    color: #fff;
-    border: none;
-    border-radius: 10px;
-    font-size: 16px;
-    font-weight: 700;
-    cursor: pointer;
-  }
-
-  .wanpoly-panel { text-align: center; padding: 20px 0; }
-  .wanpoly-panel .icon { font-size: 40px; margin-bottom: 8px; }
-  .wanpoly-panel .msg { font-size: 15px; font-weight: 600; margin-bottom: 4px; }
-  .wanpoly-panel .sub { font-size: 13px; color: var(--text-sub); margin-bottom: 16px; }
-
-  .toast {
-    position: fixed;
-    bottom: 24px; left: 50%;
-    transform: translateX(-50%);
-    background: #1a1a2e;
-    color: #fff;
-    padding: 12px 20px;
-    border-radius: 30px;
-    font-size: 14px;
-    z-index: 200;
-    opacity: 0;
-    transition: opacity 0.25s;
-    pointer-events: none;
-  }
+  .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(28,28,30,0.88); backdrop-filter: blur(16px); color: #fff; padding: 12px 24px; border-radius: 22px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
   .toast.show { opacity: 1; }
 
-  .modal-overlay {
-    position: fixed; inset: 0;
-    background: rgba(0,0,0,0.4);
-    display: none;
-    align-items: flex-end;
-    z-index: 300;
-  }
-  .modal-overlay.show { display: flex; }
-  .modal-sheet {
-    background: #fff;
-    width: 100%;
-    max-width: 480px;
-    margin: 0 auto;
-    border-radius: 16px 16px 0 0;
-    padding: 20px;
-    max-height: 80vh;
-    overflow-y: auto;
-  }
-  .modal-sheet h3 { margin: 0 0 14px; font-size: 16px; }
+  .result-card { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 20px; margin-bottom: 12px; box-shadow: var(--apple-shadow); border: none; }
+  .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+  .result-top-left { min-width: 0; flex: 1; }
+  .sku { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+  .option { font-size: 14px; color: var(--apple-text-sub); margin-top: 2px; }
+  .btn-confirm { flex-shrink: 0; background: var(--apple-blue); color: #fff; text-decoration: none; font-size: 14px; font-weight: 600; padding: 10px 18px; border-radius: 20px; white-space: nowrap; }
+  .btn-confirm:active { transform: scale(0.96); }
+
+  .floor-box { text-align: center; font-weight: 700; padding: 18px 14px; border-radius: var(--apple-radius-lg); }
+  .floor-box .floor-name { font-size: 13px; opacity: 0.8; }
+  .floor-box .bag-name { font-size: 18px; font-weight: 800; margin-top: 4px; }
+  .floor-box.floor-3f { background: #FFFFFF; color: #333; border: 1.5px solid var(--apple-gray4); }
+  .floor-box.floor-2f { background: var(--apple-green); color: #fff; }
+  .floor-box.floor-b1 { background: var(--apple-orange); color: #fff; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
+  .info-cell { background: var(--apple-gray6); border-radius: var(--apple-radius); padding: 14px; text-align: center; }
+  .info-label { font-size: 12px; color: var(--apple-text-sub); margin-bottom: 4px; font-weight: 500; }
+  .info-value { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
+
+  .floor-label { font-size: 13px; font-weight: 600; color: var(--apple-text-sub); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px; padding-left: 4px; }
+  .table-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
+  .table-btn { padding: 16px 10px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .table-btn:active { transform: scale(0.96); background: var(--apple-gray6); }
+
+  .today-stat { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--apple-text-sub); margin-bottom: 14px; padding: 0 4px; font-weight: 500; }
+  .today-stat b { color: var(--apple-text); }
+  .scan-box { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 20px; box-shadow: var(--apple-shadow); }
+  .scan-box input { width: 100%; padding: 14px 16px; font-size: 17px; border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); outline: none; background: var(--apple-gray6); }
+  .scan-box input:focus { border-color: var(--apple-blue); background: #fff; }
+  .scan-hint { font-size: 12px; color: var(--apple-text-sub); text-align: center; margin-top: 10px; }
+
+  .poly-btn-row { display: flex; gap: 8px; }
+  .poly-btn { flex: 1; padding: 12px; background: var(--apple-gray6); border: 1.5px solid transparent; border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text3); cursor: pointer; }
+  .poly-btn.selected { border-color: var(--apple-blue); background: rgba(0,122,255,0.08); color: var(--apple-blue); }
+  .poly-btn:active { transform: scale(0.97); }
+
+  .pcs-adjust { display: flex; gap: 10px; align-items: center; }
+  .pcs-adjust button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--apple-gray6); font-size: 20px; font-weight: 600; color: var(--apple-blue); cursor: pointer; }
+  .pcs-adjust button:active { background: var(--apple-gray5); transform: scale(0.93); }
+  .pcs-adjust input { flex: 1; text-align: center; font-size: 20px; font-weight: 700; padding: 12px; border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); background: var(--apple-gray6); }
+  .pcs-adjust input:focus { border-color: var(--apple-blue); background: #fff; }
+  .form-group { margin-bottom: 16px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--apple-text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
 
   .hidden { display: none !important; }
 
-  /* ===== 홈 화면 ===== */
-  .home-menu { display: flex; flex-direction: column; gap: 14px; margin-top: 40px; }
-  .home-btn {
-    background: #fff;
-    border: 2px solid var(--border);
-    border-radius: 16px;
-    padding: 28px 20px;
-    text-align: center;
-    cursor: pointer;
-  }
-  .home-btn.collect { border-color: #d97706; }
-  .home-btn.quality { border-color: var(--accent); }
+  .home-menu { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
+  .home-btn { background: var(--apple-card); border: none; border-radius: var(--apple-radius-lg); padding: 28px 20px; text-align: center; cursor: pointer; box-shadow: var(--apple-shadow); }
+  .home-btn:active { transform: scale(0.98); }
   .home-btn-icon { font-size: 40px; margin-bottom: 8px; }
-  .home-btn-title { font-size: 19px; font-weight: 700; margin-bottom: 4px; }
-  .home-btn-desc { font-size: 13px; color: var(--text-sub); }
+  .home-btn-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
+  .home-btn-desc { font-size: 13px; color: var(--apple-text-sub); }
 
-  /* ===== 재고 배너 ===== */
-  .stock-banner {
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 12px;
-    font-size: 14px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .stock-banner.ok { background: #e8f5e9; color: #2e7d32; }
-  .stock-banner.low { background: #fff3cd; color: #856404; }
-  .stock-banner.zero { background: #fde2e2; color: #b91c1c; }
+  .stock-banner { border-radius: var(--apple-radius); padding: 12px 14px; margin-bottom: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
+  .stock-banner.ok { background: rgba(52,199,89,0.12); color: #1B7A34; }
+  .stock-banner.low { background: rgba(255,204,0,0.15); color: #946800; }
+  .stock-banner.zero { background: rgba(255,59,48,0.12); color: #C62828; }
+  .already-banner { background: rgba(0,122,255,0.08); color: var(--apple-blue); border-radius: var(--apple-radius); padding: 10px 14px; margin-bottom: 12px; font-size: 13px; font-weight: 500; }
 
-  .already-banner {
-    background: #eef2ff;
-    color: #3730a3;
-    border-radius: 10px;
-    padding: 10px 14px;
-    margin-bottom: 12px;
-    font-size: 13px;
-  }
-
-  .fill-check {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    font-size: 14px;
-    margin-bottom: 16px;
-    cursor: pointer;
-  }
-  .fill-check input { width: 20px; height: 20px; }
   .label-row { display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; }
   .label-row label { margin-bottom: 0; }
-  .inline-edit-btn { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 8px; cursor: pointer; }
+  .inline-edit-btn { background: rgba(0,122,255,0.08); border: none; color: var(--apple-blue); font-size: 13px; font-weight: 600; padding: 5px 14px; border-radius: 20px; cursor: pointer; }
 
-  /* ===== 데이터 수집 목록 ===== */
   .collect-priority-tabs { display: flex; gap: 6px; margin-bottom: 12px; }
-  .progress-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-  .progress-bar-bg { flex: 1; height: 8px; background: #e2e2e6; border-radius: 4px; overflow: hidden; }
-  .progress-bar-fill { height: 100%; background: var(--accent); border-radius: 4px; transition: width 0.3s; }
-  .progress-label { font-size: 12px; color: var(--text-sub); white-space: nowrap; }
-  .prio-tab {
-    flex: 1;
-    padding: 10px 4px;
-    background: #fff;
-    border: 1.5px solid var(--border);
-    border-radius: 10px;
-    font-size: 13px;
-    font-weight: 600;
-    cursor: pointer;
-    color: var(--text-sub);
-  }
-  .prio-tab.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
+  .progress-bar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .progress-bar-bg { flex: 1; height: 6px; background: var(--apple-gray5); border-radius: 3px; overflow: hidden; }
+  .progress-bar-fill { height: 100%; background: var(--apple-blue); border-radius: 3px; transition: width 0.3s; }
+  .progress-label { font-size: 12px; color: var(--apple-text-sub); white-space: nowrap; font-weight: 500; }
+
+  .prio-tab { flex: 1; padding: 10px 4px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 13px; font-weight: 600; cursor: pointer; color: var(--apple-text-sub); box-shadow: var(--apple-shadow); }
+  .prio-tab.active { background: var(--apple-blue); color: #fff; }
   .prio-tab span { font-size: 11px; opacity: 0.7; }
 
-  .collect-item {
-    background: #fff;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    padding: 12px 14px;
-    margin-bottom: 8px;
-    cursor: pointer;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 10px;
-  }
-  .collect-item:active { background: #f5f5f7; }
+  .collect-item { background: var(--apple-card); border: none; border-radius: var(--apple-radius); padding: 14px 16px; margin-bottom: 8px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 10px; box-shadow: var(--apple-shadow); }
+  .collect-item:active { transform: scale(0.99); background: var(--apple-gray6); }
+  .collect-item.is-done { opacity: 0.45; cursor: default; }
   .collect-item .ci-left { min-width: 0; }
-  .collect-item .ci-sku { font-weight: 700; font-size: 14px; }
-  .collect-item .ci-sub { font-size: 12px; color: var(--text-sub); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .collect-item .ci-sku { font-weight: 700; font-size: 15px; letter-spacing: -0.2px; }
+  .collect-item .ci-sub { font-size: 12px; color: var(--apple-text-sub); }
   .collect-item .ci-right { text-align: right; flex-shrink: 0; }
-  .collect-item .ci-loc { font-size: 13px; font-weight: 600; color: var(--accent); }
-  .collect-item .ci-stock { font-size: 12px; color: var(--text-sub); }
-  .collect-empty { text-align: center; color: var(--text-sub); padding: 40px 0; font-size: 14px; }
-  .collect-item.is-done { opacity: 0.5; cursor: default; }
-  .ci-cat { font-size: 11px; background: #eef2ff; color: #3730a3; padding: 1px 6px; border-radius: 8px; font-weight: 500; margin-left: 4px; }
+  .collect-item .ci-loc { font-size: 13px; font-weight: 600; color: var(--apple-blue); }
+  .collect-item .ci-stock { font-size: 12px; color: var(--apple-text-sub); }
+  .collect-empty { text-align: center; color: var(--apple-text-sub); padding: 40px 0; font-size: 14px; }
+  .ci-cat { font-size: 11px; background: rgba(0,122,255,0.08); color: var(--apple-blue); padding: 2px 8px; border-radius: 20px; font-weight: 600; margin-left: 4px; }
   .ci-status { margin: 4px 0 2px; display: flex; gap: 6px; }
-  .chk { font-size: 11px; padding: 2px 7px; border-radius: 8px; font-weight: 600; }
-  .chk.done { background: #e8f5e9; color: #2e7d32; }
-  .chk.todo { background: #f0f0f0; color: #999; }
-  .chk.na { background: #f5f5f7; color: #aaa; }
-  .edit-req-btn { background: #fff; border: 1.5px solid var(--accent); color: var(--accent); font-size: 13px; font-weight: 600; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
+  .chk { font-size: 11px; padding: 2px 8px; border-radius: 20px; font-weight: 600; }
+  .chk.done { background: rgba(52,199,89,0.12); color: #1B7A34; }
+  .chk.todo { background: var(--apple-gray6); color: var(--apple-gray); }
+  .chk.na { background: var(--apple-gray6); color: var(--apple-gray); }
+  .edit-req-btn { background: rgba(0,122,255,0.08); border: none; color: var(--apple-blue); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 20px; cursor: pointer; }
 
-  /* ===== 관리자 화면 ===== */
-  .admin-tabs { display: flex; gap: 8px; margin-bottom: 16px; }
-  .admin-tab { flex: 1; padding: 12px; background: #fff; border: 1.5px solid var(--border); border-radius: 10px; font-size: 14px; font-weight: 600; color: var(--text-sub); cursor: pointer; }
-  .admin-tab.active { border-color: var(--accent); color: var(--accent); background: #eef2ff; }
-  .admin-filter-row { display: flex; gap: 8px; margin-bottom: 12px; }
-  .admin-filter-btn { padding: 6px 14px; background: #fff; border: 1.5px solid var(--border); border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--text-sub); }
-  .admin-filter-btn.active { border-color: var(--accent); color: var(--accent); }
-  .req-card { background: #fff; border: 1px solid var(--border); border-radius: 12px; padding: 16px; margin-bottom: 12px; }
+  .sub-table-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
+  .sub-slot { padding: 12px 4px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); text-align: center; font-size: 15px; font-weight: 600; color: var(--apple-text-sub); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .sub-slot.active { background: var(--apple-blue); color: #fff; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
+  .sub-slot:active { transform: scale(0.95); }
+
+  .admin-tabs { display: flex; gap: 6px; margin-bottom: 16px; }
+  .admin-tab { flex: 1; padding: 12px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 14px; font-weight: 600; color: var(--apple-text-sub); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .admin-tab.active { background: var(--apple-blue); color: #fff; }
+  .admin-filter-row { display: flex; gap: 6px; margin-bottom: 12px; }
+  .admin-filter-btn { padding: 6px 16px; background: var(--apple-gray6); border: none; border-radius: 20px; font-size: 13px; cursor: pointer; color: var(--apple-text-sub); font-weight: 600; }
+  .admin-filter-btn.active { background: var(--apple-blue); color: #fff; }
+
+  .req-card { background: var(--apple-card); border: none; border-radius: var(--apple-radius-lg); padding: 16px; margin-bottom: 10px; box-shadow: var(--apple-shadow); }
   .req-head { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
   .req-sku { font-size: 16px; font-weight: 700; }
-  .req-time { font-size: 12px; color: var(--text-sub); }
+  .req-time { font-size: 12px; color: var(--apple-text-sub); }
   .req-change { display: flex; gap: 10px; align-items: center; font-size: 14px; margin: 6px 0; }
-  .req-change .rc-label { color: var(--text-sub); min-width: 60px; }
-  .req-arrow { color: #d97706; font-weight: 700; }
-  .req-reason { font-size: 13px; color: var(--text-sub); margin-top: 8px; padding: 8px; background: #f8f8fa; border-radius: 8px; }
+  .req-change .rc-label { color: var(--apple-text-sub); min-width: 60px; font-weight: 500; }
+  .req-arrow { color: var(--apple-orange); font-weight: 700; }
+  .req-reason { font-size: 13px; color: var(--apple-text-sub); margin-top: 8px; padding: 10px; background: var(--apple-gray6); border-radius: var(--apple-radius); }
   .req-actions { display: flex; gap: 8px; margin-top: 12px; }
-  .btn-approve { flex: 1; padding: 10px; background: var(--accent); color: #fff; border: none; border-radius: 8px; font-weight: 600; cursor: pointer; }
-  .btn-reject { flex: 1; padding: 10px; background: #fff; color: #b91c1c; border: 1.5px solid #b91c1c; border-radius: 8px; font-weight: 600; cursor: pointer; }
-  .req-status { font-size: 12px; padding: 3px 10px; border-radius: 8px; font-weight: 600; display: inline-block; margin-top: 8px; }
-  .req-status.done { background: #e8f5e9; color: #2e7d32; }
-  .req-status.reject { background: #f0f0f0; color: #999; }
+  .btn-approve { flex: 1; padding: 11px; background: var(--apple-blue); color: #fff; border: none; border-radius: var(--apple-radius); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .btn-reject { flex: 1; padding: 11px; background: var(--apple-card); color: var(--apple-red); border: 1.5px solid var(--apple-red); border-radius: var(--apple-radius); font-weight: 600; font-size: 14px; cursor: pointer; }
+  .req-status { font-size: 12px; padding: 4px 12px; border-radius: 20px; font-weight: 600; display: inline-block; margin-top: 8px; }
+  .req-status.done { background: rgba(52,199,89,0.12); color: #1B7A34; }
+  .req-status.reject { background: var(--apple-gray6); color: var(--apple-gray); }
+  .btn-sync-item { padding: 11px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 13px; font-weight: 600; color: var(--apple-text-sub); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .btn-sync-item:active { background: var(--apple-gray6); transform: scale(0.97); }
+
+  .new-sku-warning { display: flex; align-items: center; gap: 8px; background: rgba(255,149,0,0.12); color: #945700; border-radius: var(--apple-radius); padding: 12px 14px; margin-bottom: 14px; font-size: 14px; font-weight: 600; }
+  #screenNewSku .result-card { border: 2px solid var(--apple-orange); background: #FFFBF0; }
 </style>
 </head>
 <body>
@@ -512,7 +179,6 @@
 <header>
   <div class="title" id="headerTitle">양품화</div>
   <div style="display:flex; align-items:center; gap:8px;">
-    <button onclick="reloadData()" style="background:none; border:none; color:#aaa; font-size:16px; cursor:pointer;" title="데이터 새로고침">🔄</button>
     <a id="adminLink" href="#" onclick="openAdmin(); return false;" style="color:#aaa; font-size:12px; text-decoration:none; cursor:pointer;">관리자</a>
     <div class="table-badge" id="homeBadge" onclick="goHome()">🏠 홈</div>
   </div>
@@ -566,21 +232,33 @@
 
     <div id="adminTabSync" class="hidden">
       <div class="result-card">
-        <div style="font-weight:700; margin-bottom:10px;">Supabase DB 동기화</div>
-        <div style="font-size:14px; color:var(--text-sub); line-height:1.7;">
-          현재는 구글 시트를 데이터 원본으로 사용 중입니다. 향후 Supabase로 이관할 때 사용합니다.<br><br>
-          시트 → Supabase 동기화는 <b>스프레드시트 상단 메뉴</b>에서 실행하세요:<br>
-          <b>양품화 동기화 → 전체 동기화(순서대로 실행)</b><br><br>
-          시트 수정 후 작업자 화면에 바로 반영하려면:<br>
-          <b>양품화 동기화 → 시트 조회 캐시 초기화</b>
+        <div style="font-weight:700; margin-bottom:10px;">시트 → Supabase 동기화</div>
+        <div style="font-size:14px; color:var(--text-sub); line-height:1.7; margin-bottom:16px;">
+          구글 시트의 데이터를 Supabase로 동기화합니다.<br>
+          전표DB / SKU별폴리 / SKU별대봉 / 불량체크포인트 / 재고DB / 카테고리DB 전부 동기화됩니다.
         </div>
+        <button id="syncAllBtn" onclick="runSyncAll()" style="width:100%; padding:14px; background:#2563eb; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">🔄 전체 동기화 실행</button>
+        <button onclick="runClearCache()" style="width:100%; padding:12px; background:#fff; color:#2563eb; border:1.5px solid #2563eb; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:10px;">🗑 시트 조회 캐시 초기화</button>
+        <div id="syncResultAdmin" style="font-size:13px; color:var(--text-sub); text-align:center; white-space:pre-line;"></div>
+      </div>
+
+      <div class="result-card" style="margin-top:12px;">
+        <div style="font-weight:700; margin-bottom:10px;">개별 동기화</div>
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
+          <button onclick="runSync('qualitySyncInvoice')" class="btn-sync-item">전표DB</button>
+          <button onclick="runSync('qualitySyncPoly')" class="btn-sync-item">SKU별폴리</button>
+          <button onclick="runSync('qualitySyncBag')" class="btn-sync-item">SKU별대봉</button>
+          <button onclick="runSync('qualitySyncDefectHint')" class="btn-sync-item">불량체크포인트</button>
+          <button onclick="runSync('qualitySyncStock')" class="btn-sync-item">재고DB</button>
+          <button onclick="runSync('qualitySyncCategory')" class="btn-sync-item">카테고리DB</button>
+        </div>
+        <div id="syncItemResult" style="font-size:13px; color:var(--text-sub); text-align:center; margin-top:8px;"></div>
       </div>
     </div>
   </div>
 
   <!-- ============== 화면 1: 테이블 선택 ============== -->
   <div id="screenTableSelect" class="hidden">
-    <button class="btn-back" onclick="goHome()">← 홈으로</button>
     <div class="floor-label">3층</div>
     <div class="table-select-grid" id="grid3f"></div>
     <div class="floor-label">2층</div>
@@ -699,14 +377,13 @@
 
   <!-- ============== 화면 2: 스캔 대기 ============== -->
   <div id="screenScan" class="hidden">
-    <button class="btn-back" onclick="showTableSelect()">← 테이블 선택</button>
     <div class="today-stat">
       <span id="currentTableLabel">-</span>
       <span>오늘 <b id="todayPcs">0</b> pcs · <b id="todayCount">0</b>건</span>
     </div>
     <div class="sub-table-slots" id="subTableSlots"></div>
     <div class="scan-box">
-      <input type="text" id="barcodeInput" placeholder="소테이블을 먼저 선택하세요" autocomplete="off" disabled inputmode="latin" lang="en" style="ime-mode:disabled;">
+      <input type="text" id="barcodeInput" placeholder="소테이블을 먼저 선택하세요" autocomplete="off" disabled>
       <div class="scan-hint" id="scanHint">소테이블을 선택한 뒤 스캔하세요</div>
     </div>
   </div>
@@ -867,15 +544,11 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 //    실제 배포 전에 false로 바꾸세요.
 const DUMMY_MODE = false;
 
-// ★ 시트 모드: true면 Supabase 대신 스프레드시트(google.script.run)로 조회.
-//    Apps Script 웹앱으로 배포했을 때만 동작(google.script.run이 존재).
+// GitHub Pages: Supabase 직접 연동 모드 (SHEET_MODE 대신)
 const SHEET_MODE = false;
-const SUPABASE_MODE = true; // GitHub Pages에서 Supabase 직접 연동
+const SUPABASE_MODE = true;
 
-// ★ 상품확인(ABLY 상품검색) 페이지 주소 — 여기 앞부분만 넣으세요.
-//   예: 'https://내부주소/search' 또는 'https://내부주소/페이지'
-//   뒤의 ?keyword_type=sku_code&keyword=SKU값 은 자동으로 붙습니다.
-const PHOTO_SEARCH_BASE_URL = '';
+const PHOTO_SEARCH_BASE_URL = 'https://admin.a-bly.com/mobile/goods';
 
 // 관리자는 헤더 '관리자' 클릭 → 비밀번호(0805) → 같은 화면에서 관리자 화면으로 전환(openAdmin)
 
@@ -1025,7 +698,7 @@ function selectTable(tableCode, floor) {
   document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
 
   // 스캔 데이터 미리 로딩
-  if ((SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) && !sheetIndex) {
+  if (SHEET_MODE && !sheetIndex) {
     preloadSheetIndex().catch((e) => {
       console.error('데이터 로딩 실패:', e);
       showToast('데이터 로딩 실패');
@@ -1049,20 +722,6 @@ function selectSubTable(subId) {
 function goHome() {
   showScreen('screenHome');
   document.getElementById('headerTitle').textContent = '양품화';
-}
-
-// 데이터 새로고침 (Supabase에서 전체 인덱스 다시 로드)
-async function reloadData() {
-  sheetIndex = null;
-  sheetIndexLoading = null;
-  showToast('데이터 새로고침 중...');
-  try {
-    await preloadSheetIndex();
-    showToast('데이터가 최신 상태로 갱신되었습니다');
-  } catch (e) {
-    console.error(e);
-    showToast('새로고침 실패: ' + e.message);
-  }
 }
 
 // ===== 관리자 =====
@@ -1097,12 +756,42 @@ function setAdminFilter(f) {
   renderAdminRequests();
 }
 
-function callAdminGS(fnName, arg) {
-  return new Promise((resolve, reject) => {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-      reject(new Error('google.script.run 사용 불가'));
-      return;
+async function callAdminGS(fnName, arg) {
+  if (SUPABASE_MODE) {
+    if (fnName === 'get') {
+      const rows = await sbFetch('change_request?select=*&order=id.desc&limit=200');
+      return rows.map(r => ({
+        rowNum: r.id, datetime: r.requested_at||'', sku: r.sku||'', category_small: r.category_small||'',
+        location: r.location_code||'', current_poly: r.current_poly||'', request_poly: r.request_poly||'',
+        tier: r.current_tier||'', current_pcs: r.current_pcs, request_pcs: r.request_pcs,
+        reason: r.reason||'', status: r.status||'대기'
+      }));
     }
+    if (fnName === 'approve') {
+      if (arg.requestPoly) await sbPost('sku_poly?on_conflict=sku', { sku: arg.sku, poly_size: arg.requestPoly, category_small: arg.categorySmall||'', updated_at: new Date().toISOString() });
+      if (arg.requestPcs != null && arg.requestPcs !== '' && arg.tier) {
+        const row = { sku: arg.sku, category_small: arg.categorySmall||'', updated_at: new Date().toISOString() };
+        if (String(arg.tier)==='3') row.pcs_3tier = parseInt(arg.requestPcs); else row.pcs_4tier = parseInt(arg.requestPcs);
+        await sbPost('sku_bag?on_conflict=sku', row);
+      }
+      await sbPatch('change_request?id=eq.' + arg.rowNum, { status: '완료', resolved_at: new Date().toISOString() });
+      if (sheetIndex) {
+        if (arg.requestPoly) sheetIndex.polyBySku[arg.sku] = arg.requestPoly;
+        if (arg.requestPcs != null && arg.tier) {
+          if (!sheetIndex.bagBySku[arg.sku]) sheetIndex.bagBySku[arg.sku] = { category_small:'', pcs3:null, pcs4:null };
+          if (String(arg.tier)==='3') sheetIndex.bagBySku[arg.sku].pcs3 = parseInt(arg.requestPcs);
+          else sheetIndex.bagBySku[arg.sku].pcs4 = parseInt(arg.requestPcs);
+        }
+      }
+      return { ok: true };
+    }
+    if (fnName === 'reject') {
+      await sbPatch('change_request?id=eq.' + arg, { status: '반려' });
+      return { ok: true };
+    }
+  }
+  // Apps Script fallback
+  return new Promise((resolve, reject) => {
     const r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
     if (fnName === 'get') r.qualityGetChangeRequests();
     else if (fnName === 'approve') r.qualityApproveChangeRequest(arg);
@@ -1119,7 +808,7 @@ async function loadAdminRequests() {
     return;
   }
   try {
-    adminAllRequests = await loadChangeRequests();
+    adminAllRequests = await callAdminGS('get');
     if (!Array.isArray(adminAllRequests)) adminAllRequests = [];
     renderAdminRequests();
   } catch (e) {
@@ -1163,7 +852,7 @@ function renderAdminRequests() {
 async function approveReq(r) {
   if (!confirm(`${r.sku} 수정요청을 승인하고 반영할까요?`)) return;
   try {
-    await approveChangeRequestSupabase( { rowNum: r.rowNum, sku: r.sku, tier: r.tier, requestPoly: r.request_poly, requestPcs: r.request_pcs, categorySmall: r.category_small });
+    await callAdminGS('approve', { rowNum: r.rowNum, sku: r.sku, tier: r.tier, requestPoly: r.request_poly, requestPcs: r.request_pcs, categorySmall: r.category_small });
     // 로컬 인덱스 즉시 반영
     if (sheetIndex) {
       if (r.request_poly) sheetIndex.polyBySku[r.sku] = r.request_poly;
@@ -1181,7 +870,7 @@ async function approveReq(r) {
 async function rejectReq(rowNum) {
   if (!confirm('이 요청을 반려할까요?')) return;
   try {
-    await rejectChangeRequestSupabase( rowNum);
+    await callAdminGS('reject', rowNum);
     showToast('반려되었습니다');
     loadAdminRequests();
   } catch (e) { console.error(e); showToast('처리 실패'); }
@@ -1189,6 +878,55 @@ async function rejectReq(rowNum) {
 
 function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ===== DB 동기화 (google.script.run으로 서버 함수 실행) =====
+function runSyncAll() {
+  const btn = document.getElementById('syncAllBtn');
+  const result = document.getElementById('syncResultAdmin');
+  btn.disabled = true; btn.textContent = '동기화 중... (1~2분 소요)';
+  result.textContent = '';
+  google.script.run
+    .withSuccessHandler(function() {
+      btn.disabled = false; btn.textContent = '🔄 전체 동기화 실행';
+      result.textContent = '✅ 전체 동기화 완료';
+      result.style.color = '#2e7d32';
+    })
+    .withFailureHandler(function(e) {
+      btn.disabled = false; btn.textContent = '🔄 전체 동기화 실행';
+      result.textContent = '❌ 실패: ' + (e.message || e);
+      result.style.color = '#b91c1c';
+    })
+    .qualitySyncAll();
+}
+
+function runClearCache() {
+  google.script.run
+    .withSuccessHandler(function() { showToast('캐시 초기화 완료'); })
+    .withFailureHandler(function(e) { showToast('실패: ' + e.message); })
+    .qualityClearCache();
+}
+
+function runSync(fnName) {
+  const result = document.getElementById('syncItemResult');
+  result.textContent = fnName + ' 실행 중...';
+  result.style.color = 'var(--accent)';
+  const runner = google.script.run
+    .withSuccessHandler(function(msg) {
+      result.textContent = '✅ ' + (msg || '완료');
+      result.style.color = '#2e7d32';
+    })
+    .withFailureHandler(function(e) {
+      result.textContent = '❌ ' + (e.message || e);
+      result.style.color = '#b91c1c';
+    });
+  // 함수명으로 직접 호출
+  if (fnName === 'qualitySyncInvoice') runner.qualitySyncInvoice();
+  else if (fnName === 'qualitySyncPoly') runner.qualitySyncPoly();
+  else if (fnName === 'qualitySyncBag') runner.qualitySyncBag();
+  else if (fnName === 'qualitySyncDefectHint') runner.qualitySyncDefectHint();
+  else if (fnName === 'qualitySyncStock') runner.qualitySyncStock();
+  else if (fnName === 'qualitySyncCategory') runner.qualitySyncCategory();
 }
 
 function enterQualityMode() {
@@ -1204,7 +942,7 @@ function enterCollectMode() {
   const afterLoad = () => { buildCollectLists(); switchPrio(currentPrio); };
   if (DUMMY_MODE) {
     afterLoad();
-  } else if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+  } else if (SHEET_MODE) {
     if (sheetIndex) { afterLoad(); }
     else {
       preloadSheetIndex().then(afterLoad).catch((e) => {
@@ -1227,12 +965,7 @@ function showScreen(id) {
 function focusBarcodeInput() {
   setTimeout(() => {
     const el = document.getElementById('barcodeInput');
-    if (el) {
-      el.focus();
-      // 한글 IME 강제 비활성화
-      el.setAttribute('inputmode', 'latin');
-      el.setAttribute('lang', 'en');
-    }
+    if (el) el.focus();
   }, 100);
 }
 
@@ -1474,8 +1207,8 @@ async function submitEditRequest() {
   if (btn) { btn.disabled = true; btn.textContent = '제출 중...'; }
 
   try {
-    if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
-      await saveChangeRequestToSupabase({
+    if (SHEET_MODE) {
+      await saveChangeRequestToSheet({
         sku: item.sku,
         categorySmall: item.category_small || '',
         location: item.location_code || '',
@@ -1656,14 +1389,14 @@ async function submitCollect() {
   if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
 
   try {
-    if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+    if (SHEET_MODE) {
       const payload = {
         sku: collectScan.sku,
         categorySmall: collectScan.category_small || ''
       };
       if (hasPoly) payload.polySize = collectSelectedPoly;   // 폴리 입력했을 때만
       if (hasPcs) { payload.tier = tier; payload.pcs = pcsValue; } // pcs 입력했을 때만
-      await (SUPABASE_MODE ? saveToSupabase : saveNewSkuToSheet)(payload);
+      await saveNewSkuToSheet(payload);
 
       // 로컬 인덱스 즉시 갱신(양단 자동 계산 포함)
       if (sheetIndex) {
@@ -1702,7 +1435,7 @@ async function submitCollect() {
 async function loadTodayStat() {
   if (!currentTable) return;
 
-  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
     // 더미모드: 세션 동안 로컬 카운트만 표시
     document.getElementById('todayPcs').textContent = dummyTodayPcs;
     document.getElementById('todayCount').textContent = dummyTodayCount;
@@ -1742,13 +1475,74 @@ function parseOptionCode(raw) {
   return raw;
 }
 
+// google.script.run을 Promise로 감싸는 헬퍼 (옵션코드 조회 전용)
+function callSheetLookup(optionCode) {
+  return new Promise((resolve, reject) => {
+    if (typeof google === 'undefined' || !google.script || !google.script.run) {
+      reject(new Error('google.script.run을 사용할 수 없습니다(웹앱 배포 환경에서만 동작)'));
+      return;
+    }
+    google.script.run
+      .withSuccessHandler(resolve)
+      .withFailureHandler(reject)
+      .qualityLookupByOptionCode(optionCode);
+  });
+}
 
+// 신규 SKU 값을 시트에 저장(google.script.run → qualitySaveNewSku)
+async function saveNewSkuToSheet(payload) {
+  if (SUPABASE_MODE) {
+    const sku = payload.sku;
+    let catSmall = payload.categorySmall || '';
+    if (!catSmall && sheetIndex && sheetIndex.categoryBySku && sheetIndex.categoryBySku[sku])
+      catSmall = sheetIndex.categoryBySku[sku].category_small || '';
+    if (payload.polySize)
+      await sbPost('sku_poly?on_conflict=sku', { sku, category_small: catSmall, poly_size: payload.polySize, updated_at: new Date().toISOString() });
+    if (payload.pcs != null && payload.tier) {
+      const inputPcs = Number(payload.pcs), otherPcs = convertPcsLocal(inputPcs, payload.tier);
+      const row = { sku, category_small: catSmall, updated_at: new Date().toISOString() };
+      if (payload.tier === 4) { row.pcs_4tier = inputPcs; if (otherPcs != null) row.pcs_3tier = otherPcs; }
+      else { row.pcs_3tier = inputPcs; if (otherPcs != null) row.pcs_4tier = otherPcs; }
+      await sbPost('sku_bag?on_conflict=sku', row);
+    }
+    return { ok: true };
+  }
+  return new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualitySaveNewSku(payload);
+  });
+}
 
+async function saveChangeRequestToSheet(payload) {
+  if (SUPABASE_MODE) {
+    await sbPost('change_request', {
+      sku: payload.sku, category_small: payload.categorySmall||'', location_code: payload.location||'',
+      current_poly: payload.currentPoly||'', request_poly: payload.requestPoly||'',
+      current_tier: payload.tier||'', current_pcs: payload.currentPcs, request_pcs: payload.requestPcs,
+      reason: payload.reason||'', status: '대기'
+    });
+    return { ok: true };
+  }
+  return new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualitySaveChangeRequest(payload);
+  });
+}
 
-
-
-
-
+function pushToSubTable(payload) {
+  // Supabase 직접 전송
+  if (SUPABASE_MODE) {
+    return sbPost('current_work?on_conflict=sub_table', {
+      sub_table: payload.subTable, sku: payload.sku, option_name: payload.optionName,
+      product_name: payload.productName, poly: payload.poly,
+      pcs: payload.pcs !== '' ? payload.pcs : null,
+      bag_color: payload.bagColor, tier: payload.tier !== '' ? parseInt(payload.tier)||null : null,
+      location_code: payload.location, category_small: payload.categorySmall,
+      scanned_at: new Date().toISOString()
+    });
+  }
+  return new Promise((resolve, reject) => {
+    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualityPushToSubTable(payload);
+  });
+}
 
 // 소테이블에 스캔 정보 전송 — 시트 + Supabase 동시 (GitHub Pages 화면은 Supabase에서 읽음)
 function trySendToSubTable(data) {
@@ -1765,6 +1559,11 @@ function trySendToSubTable(data) {
     location: data.location_code || '',
     categorySmall: data.category_small || ''
   };
+
+  // 1) 시트 전송 (Apps Script 환경에서만)
+  if (SHEET_MODE) {
+    pushToSubTable(payload).catch(e => console.error('시트 전송 실패:', e));
+  }
 
   // 2) Supabase 전송 (GitHub Pages 소테이블 화면용)
   pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
@@ -1800,201 +1599,83 @@ async function pushToSubTableSupabase(p) {
 
 // ===== 프리로드 인덱스(스캔 속도 향상용) =====
 let sheetIndex = null;
+let sheetIndexLoading = null;
 
-// ============================================================
-// Supabase REST API 헬퍼 (GitHub Pages에서 직접 호출)
-// ============================================================
-async function sbFetch(path, method, body) {
-  const opts = {
-    method: method || 'GET',
+// Supabase REST API 헬퍼
+async function sbFetch(path) {
+  const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+  });
+  if (!resp.ok) throw new Error('Supabase ' + resp.status);
+  return resp.json();
+}
+
+async function sbPost(path, body) {
+  const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    method: 'POST',
     headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json'
-    }
-  };
-  if (method === 'POST' || method === 'PATCH') {
-    opts.headers['Prefer'] = 'return=representation,resolution=merge-duplicates';
-  }
-  if (body) opts.body = JSON.stringify(body);
-  const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, opts);
-  if (!resp.ok) throw new Error('Supabase ' + resp.status + ': ' + (await resp.text()).substring(0, 200));
-  const text = await resp.text();
-  return text ? JSON.parse(text) : null;
-}
-
-// 전체 인덱스를 Supabase에서 로드 (preloadSheetIndex 대체)
-async function loadSupabaseIndex() {
-  if (sheetIndex) return sheetIndex;
-
-  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows] = await Promise.all([
-    sbFetch('invoice?select=option_code,sku,option_name,product_name,location_code&limit=10000'),
-    sbFetch('sku_poly?select=sku,category_small,poly_size&limit=10000'),
-    sbFetch('sku_bag?select=sku,category_small,pcs_3tier,pcs_4tier&limit=10000'),
-    sbFetch('defect_hint?select=category,hint_text,severity&limit=5000'),
-    sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
-    sbFetch('category?select=sku,category_large,category_small&limit=50000')
-  ]);
-
-  const invoiceByOption = {};
-  invoiceRows.forEach(r => {
-    if (r.option_code) invoiceByOption[r.option_code] = {
-      sku: r.sku || '', option_name: r.option_name || '', product_name: r.product_name || '', location_code: r.location_code || ''
-    };
+      'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation,resolution=merge-duplicates'
+    },
+    body: JSON.stringify(body)
   });
+  if (!resp.ok) throw new Error('Supabase POST ' + resp.status);
+  return resp.json();
+}
 
-  const polyBySku = {};
-  polyRows.forEach(r => { if (r.sku && r.poly_size) polyBySku[r.sku] = r.poly_size; });
-
-  const bagBySku = {};
-  bagRows.forEach(r => {
-    if (r.sku) bagBySku[r.sku] = { category_small: r.category_small || '', pcs3: r.pcs_3tier, pcs4: r.pcs_4tier };
+async function sbPatch(path, body) {
+  const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
+    method: 'PATCH',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify(body)
   });
-
-  const defectByCat = {};
-  defectRows.forEach(r => {
-    if (r.category) defectByCat[r.category] = { hint_text: r.hint_text || '', severity: r.severity || 1 };
-  });
-
-  const stockByOption = {};
-  stockRows.forEach(r => {
-    if (r.option_code) stockByOption[r.option_code] = {
-      stock: r.stock_qty || 0, location_code: r.location_code || '', sku: r.sku || '', option_name: r.option_name || ''
-    };
-  });
-
-  const categoryBySku = {};
-  catRows.forEach(r => {
-    if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large || '', category_small: r.category_small || '' };
-  });
-
-  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku };
-  return sheetIndex;
+  if (!resp.ok) throw new Error('Supabase PATCH ' + resp.status);
+  return resp.json();
 }
-
-// SKU 폴리/대봉 저장 (saveNewSkuToSheet 대체)
-async function saveToSupabase(payload) {
-  if (!payload || !payload.sku) throw new Error('sku 없음');
-  const sku = payload.sku;
-
-  // 소카 자동 조회
-  let catSmall = payload.categorySmall || '';
-  if (!catSmall && sheetIndex && sheetIndex.categoryBySku && sheetIndex.categoryBySku[sku]) {
-    catSmall = sheetIndex.categoryBySku[sku].category_small || '';
-  }
-
-  if (payload.polySize) {
-    await sbFetch('sku_poly?on_conflict=sku', 'POST', {
-      sku: sku, category_small: catSmall, poly_size: payload.polySize, updated_at: new Date().toISOString()
-    });
-  }
-
-  if (payload.pcs != null && payload.tier) {
-    const inputPcs = Number(payload.pcs);
-    const otherPcs = convertPcsLocal(inputPcs, payload.tier);
-    const row = { sku: sku, category_small: catSmall, updated_at: new Date().toISOString() };
-    if (payload.tier === 4) { row.pcs_4tier = inputPcs; if (otherPcs != null) row.pcs_3tier = otherPcs; }
-    else { row.pcs_3tier = inputPcs; if (otherPcs != null) row.pcs_4tier = otherPcs; }
-    await sbFetch('sku_bag?on_conflict=sku', 'POST', row);
-  }
-
-  // 로컬 인덱스 즉시 갱신
-  if (sheetIndex) {
-    if (payload.polySize) sheetIndex.polyBySku[sku] = payload.polySize;
-    if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: catSmall, pcs3: null, pcs4: null };
-    if (catSmall) sheetIndex.bagBySku[sku].category_small = catSmall;
-    if (payload.pcs != null && payload.tier) {
-      const inputPcs = Number(payload.pcs);
-      const otherPcs = convertPcsLocal(inputPcs, payload.tier);
-      if (payload.tier === 4) { sheetIndex.bagBySku[sku].pcs4 = inputPcs; if (otherPcs != null) sheetIndex.bagBySku[sku].pcs3 = otherPcs; }
-      else { sheetIndex.bagBySku[sku].pcs3 = inputPcs; if (otherPcs != null) sheetIndex.bagBySku[sku].pcs4 = otherPcs; }
-    }
-  }
-  return { ok: true };
-}
-
-// 수정요청 저장 (saveChangeRequestToSheet 대체)
-async function saveChangeRequestToSupabase(p) {
-  await sbFetch('change_request', 'POST', {
-    sku: p.sku, category_small: p.categorySmall || '', location_code: p.location || '',
-    current_poly: p.currentPoly || '', request_poly: p.requestPoly || '',
-    current_tier: p.tier || '', current_pcs: p.currentPcs, request_pcs: p.requestPcs,
-    reason: p.reason || '', status: '대기'
-  });
-  return { ok: true };
-}
-
-// 수정요청 목록 조회 (callAdminGS('get') 대체)
-async function loadChangeRequests() {
-  const rows = await sbFetch('change_request?select=*&order=id.desc&limit=200');
-  return rows.map(r => ({
-    rowNum: r.id, datetime: r.requested_at || '', sku: r.sku || '', category_small: r.category_small || '',
-    location: r.location_code || '', current_poly: r.current_poly || '', request_poly: r.request_poly || '',
-    tier: r.current_tier || '', current_pcs: r.current_pcs, request_pcs: r.request_pcs,
-    reason: r.reason || '', status: r.status || '대기'
-  }));
-}
-
-// 수정요청 승인 (callAdminGS('approve') 대체)
-async function approveChangeRequestSupabase(p) {
-  // 폴리 반영
-  if (p.requestPoly) {
-    await sbFetch('sku_poly?on_conflict=sku', 'POST', {
-      sku: p.sku, poly_size: p.requestPoly, category_small: p.categorySmall || '', updated_at: new Date().toISOString()
-    });
-  }
-  // pcs 반영
-  if (p.requestPcs != null && p.requestPcs !== '' && p.tier) {
-    const row = { sku: p.sku, category_small: p.categorySmall || '', updated_at: new Date().toISOString() };
-    if (String(p.tier) === '3') row.pcs_3tier = parseInt(p.requestPcs);
-    else row.pcs_4tier = parseInt(p.requestPcs);
-    await sbFetch('sku_bag?on_conflict=sku', 'POST', row);
-  }
-  // 상태 완료
-  await sbFetch('change_request?id=eq.' + p.rowNum, 'PATCH', { status: '완료', resolved_at: new Date().toISOString() });
-  // 로컬 인덱스 갱신
-  if (sheetIndex) {
-    if (p.requestPoly) sheetIndex.polyBySku[p.sku] = p.requestPoly;
-    if (p.requestPcs != null && p.tier) {
-      if (!sheetIndex.bagBySku[p.sku]) sheetIndex.bagBySku[p.sku] = { category_small: '', pcs3: null, pcs4: null };
-      if (String(p.tier) === '3') sheetIndex.bagBySku[p.sku].pcs3 = parseInt(p.requestPcs);
-      else sheetIndex.bagBySku[p.sku].pcs4 = parseInt(p.requestPcs);
-    }
-  }
-  return { ok: true };
-}
-
-// 수정요청 반려 (callAdminGS('reject') 대체)
-async function rejectChangeRequestSupabase(id) {
-  await sbFetch('change_request?id=eq.' + id, 'PATCH', { status: '반려' });
-  return { ok: true };
-}
-
-// 소테이블 전송 (Supabase current_work upsert)
-async function pushToSubTableSupabase(p) {
-  await sbFetch('current_work?on_conflict=sub_table', 'POST', {
-    sub_table: p.subTable, sku: p.sku, option_name: p.optionName, product_name: p.productName,
-    poly: p.poly, pcs: p.pcs !== '' ? p.pcs : null, bag_color: p.bagColor,
-    tier: p.tier !== '' ? parseInt(p.tier) || null : null,
-    location_code: p.location, category_small: p.categorySmall, scanned_at: new Date().toISOString()
-  });
-}
-        // { invoiceByOption, polyBySku, bagBySku, defectByCat }
-let sheetIndexLoading = null; // 로딩 Promise(중복 로드 방지)
 
 function preloadSheetIndex() {
   if (sheetIndex) return Promise.resolve(sheetIndex);
   if (sheetIndexLoading) return sheetIndexLoading;
+
   if (SUPABASE_MODE) {
     sheetIndexLoading = loadSupabaseIndex();
     return sheetIndexLoading;
   }
+
   // Apps Script fallback
   sheetIndexLoading = new Promise((resolve, reject) => {
-    google.script.run.withSuccessHandler((idx) => { sheetIndex = idx; resolve(idx); })
-      .withFailureHandler(reject).qualityGetFullIndex();
+    if (typeof google === 'undefined' || !google.script || !google.script.run) { reject(new Error('google.script.run 사용 불가')); return; }
+    google.script.run.withSuccessHandler((idx) => { sheetIndex = idx; resolve(idx); }).withFailureHandler(reject).qualityGetFullIndex();
   });
   return sheetIndexLoading;
+}
+
+async function loadSupabaseIndex() {
+  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows] = await Promise.all([
+    sbFetch('invoice?select=option_code,sku,option_name,product_name,location_code&limit=50000'),
+    sbFetch('sku_poly?select=sku,category_small,poly_size&limit=50000'),
+    sbFetch('sku_bag?select=sku,category_small,pcs_3tier,pcs_4tier&limit=50000'),
+    sbFetch('defect_hint?select=category,hint_text,severity&limit=5000'),
+    sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
+    sbFetch('category?select=sku,category_large,category_small&limit=50000')
+  ]);
+  const invoiceByOption = {};
+  invoiceRows.forEach(r => { if (r.option_code) invoiceByOption[r.option_code] = { sku: r.sku||'', option_name: r.option_name||'', product_name: r.product_name||'', location_code: r.location_code||'' }; });
+  const polyBySku = {};
+  polyRows.forEach(r => { if (r.sku && r.poly_size) polyBySku[r.sku] = r.poly_size; });
+  const bagBySku = {};
+  bagRows.forEach(r => { if (r.sku) bagBySku[r.sku] = { category_small: r.category_small||'', pcs3: r.pcs_3tier, pcs4: r.pcs_4tier }; });
+  const defectByCat = {};
+  defectRows.forEach(r => { if (r.category) defectByCat[r.category] = { hint_text: r.hint_text||'', severity: r.severity||1 }; });
+  const stockByOption = {};
+  stockRows.forEach(r => { if (r.option_code) stockByOption[r.option_code] = { stock: r.stock_qty||0, location_code: r.location_code||'', sku: r.sku||'', option_name: r.option_name||'' }; });
+  const categoryBySku = {};
+  catRows.forEach(r => { if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large||'', category_small: r.category_small||'' }; });
+  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku };
+  return sheetIndex;
 }
 
 // 존 알파벳으로 tier 판별 (Code.gs qualityTierFromLocation_와 동일)
@@ -2064,10 +1745,10 @@ async function handleBarcodeScan(rawBarcode) {
     // 더미모드: 로컬 데이터에서 조회
     data = DUMMY_SCAN_DATA[optionCode] || null;
     error = null;
-  } else if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
-    // 시트모드: 프리로드된 로컬 인덱스에서 즉시 조회(서버 왕복 없음)
+  } else if (SUPABASE_MODE || SHEET_MODE) {
+    // Supabase모드/시트모드: 프리로드된 로컬 인덱스에서 즉시 조회
     try {
-      if (!sheetIndex) await preloadSheetIndex();  // 아직 로딩 전이면 이때만 대기
+      if (!sheetIndex) await preloadSheetIndex();
       data = lookupLocal(optionCode);
       error = null;
     } catch (e) {
@@ -2329,12 +2010,12 @@ async function submitNewSku() {
   const tier = currentScan.tier;
   const sku = currentScan.sku;
 
-  if (SUPABASE_MODE || SUPABASE_MODE || SHEET_MODE) {
+  if (SHEET_MODE) {
     // 시트모드: 시트에 실제 저장 + 로컬 인덱스 즉시 갱신
     const btn = document.querySelector('#screenNewSku .btn-primary');
     if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
     try {
-      await (SUPABASE_MODE ? saveToSupabase : saveNewSkuToSheet)({
+      await saveNewSkuToSheet({
         sku: sku,
         polySize: selectedPolySize,
         tier: tier,
@@ -2484,7 +2165,7 @@ async function submitChangeRequest() {
 
   const tier = currentScan.tier;
 
-  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
     showToast('[더미] 변경 요청이 제출되었습니다');
     closeChangeRequest();
     cancelToScan();
@@ -2519,7 +2200,7 @@ async function submitChangeRequest() {
 // 공통: 처리 로그 저장
 // ============================================================
 async function insertProcessingLog({ sku, option_code, tier_used, pcs, is_wanpoly }) {
-  if (DUMMY_MODE || SUPABASE_MODE || SHEET_MODE || !sbClient) {
+  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
     // 더미모드: 로컬 카운터만 증가
     dummyTodayPcs += (pcs || 0);
     dummyTodayCount += 1;
@@ -2569,5 +2250,6 @@ function showToast(msg) {
   showScreen('screenHome');
 })();
 </script>
+
 </body>
 </html>
