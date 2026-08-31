@@ -37,9 +37,9 @@
   header { background: rgba(26,26,46,0.92); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); color: #fff; padding: 14px 20px; display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; z-index: 50; }
   header .title { font-size: 17px; font-weight: 600; letter-spacing: -0.2px; }
   .table-badge { background: rgba(255,255,255,0.15); backdrop-filter: blur(8px); padding: 6px 14px; border-radius: 20px; font-size: 13px; font-weight: 600; cursor: pointer; }
-  .container { max-width: 680px; margin: 0 auto; padding: 20px 16px; }
+  .container { max-width: 420px; margin: 0 auto; padding: 20px 16px; }
 
-  .btn-primary { width: 100%; padding: 15px; font-size: 17px; font-weight: 600; background: var(--apple-blue); color: #fff; border: none; border-radius: var(--apple-radius); cursor: pointer; transition: all 0.2s; }
+  .btn-primary { width: 100%; padding: 14px; font-size: 16px; font-weight: 600; background: var(--apple-blue); color: #fff; border: none; border-radius: var(--apple-radius); cursor: pointer; transition: all 0.2s; }
   .btn-primary:active { transform: scale(0.98); }
   .btn-primary:disabled { background: var(--apple-gray4); cursor: default; transform: none; }
   .btn-secondary { width: 100%; padding: 13px; font-size: 15px; font-weight: 600; background: var(--apple-card); color: var(--apple-blue); border: none; border-radius: var(--apple-radius); cursor: pointer; box-shadow: var(--apple-shadow); }
@@ -49,7 +49,7 @@
   .toast { position: fixed; bottom: 40px; left: 50%; transform: translateX(-50%); background: rgba(28,28,30,0.88); backdrop-filter: blur(16px); color: #fff; padding: 12px 24px; border-radius: 22px; font-size: 14px; font-weight: 500; opacity: 0; transition: opacity 0.3s; pointer-events: none; z-index: 100; }
   .toast.show { opacity: 1; }
 
-  .result-card { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 20px; margin-bottom: 12px; box-shadow: var(--apple-shadow); border: none; }
+  .result-card { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 16px; margin-bottom: 12px; box-shadow: var(--apple-shadow); border: none; }
   .result-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
   .result-top-left { min-width: 0; flex: 1; }
   .sku { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
@@ -65,31 +65,31 @@
   .floor-box.floor-b1 { background: var(--apple-orange); color: #fff; }
 
   .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 14px; }
-  .info-cell { background: var(--apple-gray6); border-radius: var(--apple-radius); padding: 14px; text-align: center; }
+  .info-cell { background: var(--apple-gray6); border-radius: var(--apple-radius); padding: 12px; text-align: center; }
   .info-label { font-size: 12px; color: var(--apple-text-sub); margin-bottom: 4px; font-weight: 500; }
   .info-value { font-size: 22px; font-weight: 700; letter-spacing: -0.3px; }
 
   .floor-label { font-size: 13px; font-weight: 600; color: var(--apple-text-sub); text-transform: uppercase; letter-spacing: 0.5px; margin: 20px 0 10px; padding-left: 4px; }
   .table-select-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(80px, 1fr)); gap: 8px; }
-  .table-btn { padding: 16px 10px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .table-btn { padding: 14px 8px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text); cursor: pointer; box-shadow: var(--apple-shadow); }
   .table-btn:active { transform: scale(0.96); background: var(--apple-gray6); }
 
   .today-stat { display: flex; justify-content: space-between; align-items: center; font-size: 13px; color: var(--apple-text-sub); margin-bottom: 14px; padding: 0 4px; font-weight: 500; }
   .today-stat b { color: var(--apple-text); }
-  .scan-box { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 20px; box-shadow: var(--apple-shadow); }
+  .scan-box { background: var(--apple-card); border-radius: var(--apple-radius-lg); padding: 16px; box-shadow: var(--apple-shadow); }
   .scan-box input { width: 100%; padding: 14px 16px; font-size: 17px; border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); outline: none; background: var(--apple-gray6); }
   .scan-box input:focus { border-color: var(--apple-blue); background: #fff; }
   .scan-hint { font-size: 12px; color: var(--apple-text-sub); text-align: center; margin-top: 10px; }
 
   .poly-btn-row { display: flex; gap: 8px; }
-  .poly-btn { flex: 1; padding: 12px; background: var(--apple-gray6); border: 1.5px solid transparent; border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text3); cursor: pointer; }
+  .poly-btn { flex: 1; padding: 12px; background: var(--apple-gray6); border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); font-size: 15px; font-weight: 600; color: var(--apple-text3); cursor: pointer; }
   .poly-btn.selected { border-color: var(--apple-blue); background: rgba(0,122,255,0.08); color: var(--apple-blue); }
   .poly-btn:active { transform: scale(0.97); }
 
   .pcs-adjust { display: flex; gap: 10px; align-items: center; }
-  .pcs-adjust button { width: 44px; height: 44px; border-radius: 50%; border: none; background: var(--apple-gray6); font-size: 20px; font-weight: 600; color: var(--apple-blue); cursor: pointer; }
+  .pcs-adjust button { width: 40px; height: 40px; border-radius: 50%; border: none; background: var(--apple-gray6); font-size: 20px; font-weight: 600; color: var(--apple-blue); cursor: pointer; }
   .pcs-adjust button:active { background: var(--apple-gray5); transform: scale(0.93); }
-  .pcs-adjust input { flex: 1; text-align: center; font-size: 20px; font-weight: 700; padding: 12px; border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); background: var(--apple-gray6); }
+  .pcs-adjust input { flex: 1; text-align: center; font-size: 18px; font-weight: 700; padding: 10px; border: 1.5px solid var(--apple-gray5); border-radius: var(--apple-radius); background: var(--apple-gray6); }
   .pcs-adjust input:focus { border-color: var(--apple-blue); background: #fff; }
   .form-group { margin-bottom: 16px; }
   .form-group label { display: block; font-size: 13px; font-weight: 600; color: var(--apple-text-sub); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.3px; }
@@ -97,11 +97,15 @@
   .hidden { display: none !important; }
 
   .home-menu { display: flex; flex-direction: column; gap: 12px; margin-top: 40px; }
-  .home-btn { background: var(--apple-card); border: none; border-radius: var(--apple-radius-lg); padding: 28px 20px; text-align: center; cursor: pointer; box-shadow: var(--apple-shadow); }
+  .home-btn { background: var(--apple-card); border: none; border-radius: var(--apple-radius-lg); padding: 22px 18px; text-align: left; cursor: pointer; box-shadow: var(--apple-shadow); position: relative; overflow: hidden; }
   .home-btn:active { transform: scale(0.98); }
-  .home-btn-icon { font-size: 40px; margin-bottom: 8px; }
-  .home-btn-title { font-size: 19px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 4px; }
-  .home-btn-desc { font-size: 13px; color: var(--apple-text-sub); }
+  .home-btn::after { content: ''; position: absolute; top: 0; right: 0; width: 6px; height: 100%; }
+  .home-btn.collect::after { background: linear-gradient(180deg, #007AFF, #5856D6); }
+  .home-btn.quality::after { background: linear-gradient(180deg, #34C759, #30D158); }
+  .home-btn-title { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; margin-bottom: 6px; }
+  .home-btn.collect .home-btn-title { color: #007AFF; }
+  .home-btn.quality .home-btn-title { color: #34C759; }
+  .home-btn-desc { font-size: 13px; color: var(--apple-text-sub); line-height: 1.4; }
 
   .stock-banner { border-radius: var(--apple-radius); padding: 12px 14px; margin-bottom: 12px; font-size: 14px; font-weight: 600; display: flex; align-items: center; gap: 8px; }
   .stock-banner.ok { background: rgba(52,199,89,0.12); color: #1B7A34; }
@@ -142,7 +146,7 @@
   .edit-req-btn { background: rgba(0,122,255,0.08); border: none; color: var(--apple-blue); font-size: 13px; font-weight: 600; padding: 8px 14px; border-radius: 20px; cursor: pointer; }
 
   .sub-table-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 14px; }
-  .sub-slot { padding: 12px 4px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); text-align: center; font-size: 15px; font-weight: 600; color: var(--apple-text-sub); cursor: pointer; box-shadow: var(--apple-shadow); }
+  .sub-slot { padding: 10px 4px; background: var(--apple-card); border: none; border-radius: var(--apple-radius); text-align: center; font-size: 15px; font-weight: 600; color: var(--apple-text-sub); cursor: pointer; box-shadow: var(--apple-shadow); }
   .sub-slot.active { background: var(--apple-blue); color: #fff; box-shadow: 0 2px 8px rgba(0,122,255,0.3); }
   .sub-slot:active { transform: scale(0.95); }
 
@@ -180,7 +184,7 @@
   <div class="title" id="headerTitle">양품화</div>
   <div style="display:flex; align-items:center; gap:8px;">
     <a id="adminLink" href="#" onclick="openAdmin(); return false;" style="color:#aaa; font-size:12px; text-decoration:none; cursor:pointer;">관리자</a>
-    <div class="table-badge" id="homeBadge" onclick="goHome()">🏠 홈</div>
+    <div class="table-badge" id="homeBadge" onclick="goHome()">홈</div>
   </div>
 </header>
 
@@ -190,20 +194,18 @@
   <div id="screenHome">
     <div class="home-menu">
       <button class="home-btn collect" onclick="enterCollectMode()">
-        <div class="home-btn-icon">📏</div>
-        <div class="home-btn-title">데이터 수집 작업</div>
+                <div class="home-btn-title">데이터 수집 작업</div>
         <div class="home-btn-desc">폴리 호수 · 대봉당 최대 pcs 실측 입력</div>
       </button>
       <button class="home-btn quality" onclick="enterQualityMode()">
-        <div class="home-btn-icon">📦</div>
-        <div class="home-btn-title">양품화 작업</div>
+                <div class="home-btn-title">양품화 작업</div>
         <div class="home-btn-desc">테이블 선택 후 바코드 스캔</div>
       </button>
     </div>
   </div>
 
   <!-- ============== 화면 A: 관리자 ============== -->
-  <div id="screenAdmin" class="hidden">
+  <div id="screenAdmin" class="hidden" style="display:none">
     <div class="admin-tabs">
       <button class="admin-tab active" data-atab="requests" onclick="switchAdminTab('requests')">수정요청 확인</button>
       <button class="admin-tab" data-atab="qr" onclick="switchAdminTab('qr')">QR코드 생성</button>
@@ -237,8 +239,8 @@
           구글 시트의 데이터를 Supabase로 동기화합니다.<br>
           전표DB / SKU별폴리 / SKU별대봉 / 불량체크포인트 / 재고DB / 카테고리DB 전부 동기화됩니다.
         </div>
-        <button id="syncAllBtn" onclick="runSyncAll()" style="width:100%; padding:14px; background:#2563eb; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">🔄 전체 동기화 실행</button>
-        <button onclick="runClearCache()" style="width:100%; padding:12px; background:#fff; color:#2563eb; border:1.5px solid #2563eb; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:10px;">🗑 시트 조회 캐시 초기화</button>
+        <button id="syncAllBtn" onclick="runSyncAll()" style="width:100%; padding:14px; background:#2563eb; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">전체 동기화 실행</button>
+        <button onclick="runClearCache()" style="width:100%; padding:12px; background:#fff; color:#2563eb; border:1.5px solid #2563eb; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:10px;">캐시 초기화</button>
         <div id="syncResultAdmin" style="font-size:13px; color:var(--text-sub); text-align:center; white-space:pre-line;"></div>
       </div>
 
@@ -258,7 +260,7 @@
   </div>
 
   <!-- ============== 화면 1: 테이블 선택 ============== -->
-  <div id="screenTableSelect" class="hidden">
+  <div id="screenTableSelect" class="hidden" style="display:none">
     <div class="floor-label">3층</div>
     <div class="table-select-grid" id="grid3f"></div>
     <div class="floor-label">2층</div>
@@ -266,7 +268,7 @@
   </div>
 
   <!-- ============== 화면 C: 데이터 수집 목록 ============== -->
-  <div id="screenCollectList" class="hidden">
+  <div id="screenCollectList" class="hidden" style="display:none">
     <div class="today-stat">
       <span id="collectSeasonLabel">데이터 수집</span>
       <span>오늘 <b id="collectTodayCount">0</b>건 수집</span>
@@ -278,15 +280,15 @@
       <div class="progress-label" id="progressLabel">전체 0 / 0</div>
     </div>
     <div class="collect-priority-tabs">
-      <button class="prio-tab active" data-prio="1" onclick="switchPrio(1)">🔴 1순위 <span id="prioCount1">0</span></button>
-      <button class="prio-tab" data-prio="2" onclick="switchPrio(2)">🟡 2순위 <span id="prioCount2">0</span></button>
-      <button class="prio-tab" data-prio="3" onclick="switchPrio(3)">🟢 3순위 <span id="prioCount3">0</span></button>
+      <button class="prio-tab active" data-prio="1" onclick="switchPrio(1)">1순위 <span id="prioCount1">0</span></button>
+      <button class="prio-tab" data-prio="2" onclick="switchPrio(2)">2순위 <span id="prioCount2">0</span></button>
+      <button class="prio-tab" data-prio="3" onclick="switchPrio(3)">3순위 <span id="prioCount3">0</span></button>
     </div>
     <div id="collectListArea"></div>
   </div>
 
   <!-- ============== 화면 C2: 데이터 수집 입력 ============== -->
-  <div id="screenCollectInput" class="hidden">
+  <div id="screenCollectInput" class="hidden" style="display:none">
     <div class="result-card">
       <div class="result-top">
         <div class="result-top-left">
@@ -334,7 +336,7 @@
   </div>
 
   <!-- ============== 화면 C3: 수정요청 ============== -->
-  <div id="screenEditRequest" class="hidden">
+  <div id="screenEditRequest" class="hidden" style="display:none">
     <div class="result-card">
       <div class="result-top">
         <div class="result-top-left">
@@ -376,7 +378,7 @@
   </div>
 
   <!-- ============== 화면 2: 스캔 대기 ============== -->
-  <div id="screenScan" class="hidden">
+  <div id="screenScan" class="hidden" style="display:none">
     <div class="today-stat">
       <span id="currentTableLabel">-</span>
       <span>오늘 <b id="todayPcs">0</b> pcs · <b id="todayCount">0</b>건</span>
@@ -389,7 +391,7 @@
   </div>
 
   <!-- ============== 화면 3: 완폴리 ============== -->
-  <div id="screenWanpoly" class="hidden">
+  <div id="screenWanpoly" class="hidden" style="display:none">
     <div class="result-card">
       <div class="result-header">
         <div>
@@ -398,7 +400,7 @@
         </div>
       </div>
       <div class="wanpoly-panel">
-        <div class="icon">📦</div>
+        
         <div class="msg">완폴리 상품입니다</div>
         <div class="sub">공급처 사전포장 완료 · 바코드 부착만 진행하세요</div>
         <button class="btn-wanpoly-done" onclick="submitWanpoly()">바코드 부착 완료</button>
@@ -408,7 +410,7 @@
   </div>
 
   <!-- ============== 화면 4: 스캔 결과(기존 값 있음) ============== -->
-  <div id="screenResult" class="hidden">
+  <div id="screenResult" class="hidden" style="display:none">
     <div class="result-card">
       <!-- 상단: 좌(SKU 정보) / 우(상품확인 버튼) -->
       <div class="result-top">
@@ -448,13 +450,13 @@
       </div>
 
       <button class="btn-primary" onclick="submitProcessing()">완료</button>
-      <button class="btn-secondary" onclick="openChangeRequest()">이 값이 잘못됐어요 (변경요청)</button>
+      <button class="btn-secondary" onclick="openEditRequestForItem(currentScan)">이 값이 잘못됐어요 (변경요청)</button>
     </div>
     <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
   </div>
 
   <!-- ============== 화면 5: 신규 SKU 입력 ============== -->
-  <div id="screenNewSku" class="hidden">
+  <div id="screenNewSku" class="hidden" style="display:none">
     <div class="result-card">
       <div class="result-top">
         <div class="result-top-left">
@@ -464,7 +466,7 @@
         <a href="#" id="newPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
       </div>
 
-      <div class="new-sku-warning">⚠️ 신규 SKU · 등록된 값 없음</div>
+      <div class="new-sku-warning">신규 SKU — 등록된 값 없음</div>
 
       <div class="info-grid">
         <div class="info-cell" id="newBagColorCell">
@@ -503,32 +505,6 @@
     <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
   </div>
 
-</div>
-
-<!-- 변경요청 모달 -->
-<div class="modal-overlay" id="changeRequestModal">
-  <div class="modal-sheet">
-    <h3>변경 요청</h3>
-    <div class="form-group">
-      <label>폴리 규격 (새 값)</label>
-      <div class="poly-btn-row" id="crPolyBtnRow">
-        <button class="poly-btn" data-size="1호">1호</button>
-        <button class="poly-btn" data-size="2호">2호</button>
-        <button class="poly-btn" data-size="3호">3호</button>
-        <button class="poly-btn" data-size="4호">4호</button>
-      </div>
-    </div>
-    <div class="form-group">
-      <label>새 pcs 값</label>
-      <input type="number" id="crPcsInput">
-    </div>
-    <div class="form-group">
-      <label>사유 (선택)</label>
-      <input type="text" id="crReasonInput" placeholder="예: 실측해보니 값이 다름">
-    </div>
-    <button class="btn-primary" onclick="submitChangeRequest()">요청 제출</button>
-    <button class="btn-secondary" onclick="closeChangeRequest()">취소</button>
-  </div>
 </div>
 
 <div class="toast" id="toast"></div>
@@ -843,7 +819,7 @@ function renderAdminRequests() {
       <div class="req-head"><div><span class="req-sku">${r.sku}</span>${r.category_small?`<span class="ci-cat">${r.category_small}</span>`:''}</div><span class="req-time">${r.datetime||''}</span></div>
       <div style="font-size:13px; color:var(--text-sub); margin-bottom:4px;">로케이션 ${r.location||'-'}</div>
       ${changes}
-      ${r.reason?`<div class="req-reason">💬 ${escapeHtml(r.reason)}</div>`:''}
+      ${r.reason?`<div class="req-reason">${escapeHtml(r.reason)}</div>`:''}
       ${actions}
     </div>`;
   }).join('');
@@ -888,12 +864,12 @@ function runSyncAll() {
   result.textContent = '';
   google.script.run
     .withSuccessHandler(function() {
-      btn.disabled = false; btn.textContent = '🔄 전체 동기화 실행';
+      btn.disabled = false; btn.textContent = '전체 동기화 실행';
       result.textContent = '✅ 전체 동기화 완료';
       result.style.color = '#2e7d32';
     })
     .withFailureHandler(function(e) {
-      btn.disabled = false; btn.textContent = '🔄 전체 동기화 실행';
+      btn.disabled = false; btn.textContent = '전체 동기화 실행';
       result.textContent = '❌ 실패: ' + (e.message || e);
       result.style.color = '#b91c1c';
     })
@@ -959,7 +935,16 @@ function showTableSelect() {
 
 function showScreen(id) {
   const screens = ['screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
-  screens.forEach(s => document.getElementById(s).classList.toggle('hidden', s !== id));
+  screens.forEach(s => {
+    const el = document.getElementById(s);
+    if (s === id) {
+      el.classList.remove('hidden');
+      el.style.display = '';
+    } else {
+      el.classList.add('hidden');
+      el.style.display = 'none';
+    }
+  });
 }
 
 function focusBarcodeInput() {
@@ -1102,7 +1087,7 @@ function renderCollectList() {
     const rightBtn = item.collected
       ? `<button class="edit-req-btn" onclick="event.stopPropagation(); openEditRequest(${currentPrio}, ${i})">수정요청</button>`
       : isLocked
-        ? `<div class="ci-loc" style="color:#d97706;">작업 중 🔒</div>`
+        ? `<div class="ci-loc" style="color:#d97706;">작업 중</div>`
         : `<div class="ci-loc">${item.location_code || '-'}</div><div class="ci-stock">재고 ${item.stock}개</div>`;
     return `
       <div class="collect-item ${item.collected ? 'is-done' : ''}" onclick="${(item.collected || isLocked) ? '' : `openCollectItem(${currentPrio}, ${i})`}">
@@ -1252,7 +1237,7 @@ function renderCollectInput(data) {
     stockBanner.innerHTML = `⚠️ 재고 ${stock}개 · 로케이션 ${data.location_code || '-'} — 대봉 못 채울 수 있음`;
   } else {
     stockBanner.className = 'stock-banner ok';
-    stockBanner.innerHTML = `📍 로케이션 ${data.location_code || '-'} · 재고 ${stock}개`;
+    stockBanner.innerHTML = `로케이션 ${data.location_code || '-'} · 재고 ${stock}개`;
   }
   document.getElementById('colInputArea').style.display = '';
 
@@ -1304,7 +1289,7 @@ function renderCollectInput(data) {
     if (pcsGroup) pcsGroup.style.display = 'none';
     alreadyBanner.className = 'already-banner';
     const prev = alreadyBanner.style.display === '' ? alreadyBanner.innerHTML + '<br>' : '';
-    alreadyBanner.innerHTML = prev + '📦 이 로케이션은 대봉 작업 대상이 아닙니다 — 폴리 데이터만 입력하세요.';
+    alreadyBanner.innerHTML = prev + '이 로케이션은 대봉 작업 대상이 아닙니다 — 폴리 데이터만 입력하세요.';
     alreadyBanner.style.display = '';
     document.getElementById('colPcsEditBtn').style.display = 'none';
   } else if (bagExcluded && pcsLocked) {
@@ -1320,7 +1305,7 @@ function renderCollectInput(data) {
     document.getElementById('colPcsEditBtn').style.display = '';
     alreadyBanner.className = 'already-banner';
     const prev = alreadyBanner.style.display === '' ? alreadyBanner.innerHTML + '<br>' : '';
-    alreadyBanner.innerHTML = prev + '📦 대봉 작업 대상이 아닌 로케이션입니다. 기존 대봉 값은 수정만 가능합니다.';
+    alreadyBanner.innerHTML = prev + '대봉 작업 대상이 아닌 로케이션입니다. 기존 대봉 값은 수정만 가능합니다.';
     alreadyBanner.style.display = '';
   } else {
     if (pcsGroup) pcsGroup.style.display = '';
@@ -1714,19 +1699,43 @@ function isBagExcludedLocation(loc) {
 // 로컬 인덱스에서 옵션코드 조회 (서버 왕복 없음 → 즉시)
 function lookupLocal(optionCode) {
   if (!sheetIndex) return null;
-  const invoice = sheetIndex.invoiceByOption[optionCode];
+
+  // 1차: 전표DB에서 찾기
+  let invoice = sheetIndex.invoiceByOption[optionCode];
+
+  // 2차: 전표DB에 없으면 재고DB에서 찾기 (본사입 등 전표에 안 잡힌 상품)
+  if (!invoice && sheetIndex.stockByOption) {
+    const stockItem = sheetIndex.stockByOption[optionCode];
+    if (stockItem) {
+      invoice = {
+        sku: stockItem.sku,
+        option_name: stockItem.option_name || '',
+        product_name: '',
+        location_code: stockItem.location_code || ''
+      };
+    }
+  }
+
   if (!invoice) return null;
+
   const sku = invoice.sku;
   const bag = sheetIndex.bagBySku[sku] || {};
   const poly = sheetIndex.polyBySku[sku] || null;
   const tier = tierFromLocation(invoice.location_code);
-  const cat = bag.category_small || '';
+
+  // 카테고리: categoryBySku > bagBySku.category_small
+  let cat = '';
+  if (sheetIndex.categoryBySku && sheetIndex.categoryBySku[sku]) {
+    cat = sheetIndex.categoryBySku[sku].category_small || '';
+  }
+  if (!cat) cat = bag.category_small || '';
+
   const defect = cat ? (sheetIndex.defectByCat[cat] || null) : null;
   const pcs3 = (bag.pcs3 !== undefined) ? bag.pcs3 : null;
   const pcs4 = (bag.pcs4 !== undefined) ? bag.pcs4 : null;
   const pcsCur = tier === 3 ? pcs3 : (tier === 4 ? pcs4 : null);
   return {
-    option_code: optionCode, option_name: invoice.option_name, product_name: invoice.product_name,
+    option_code: optionCode, option_name: invoice.option_name, product_name: invoice.product_name || '',
     location_code: invoice.location_code, tier: tier, sku: sku,
     category_large: '', category_small: cat, is_wanpoly: false,
     poly_size: poly, pcs_per_bag_3tier: pcs3, pcs_per_bag_4tier: pcs4,
@@ -1971,7 +1980,7 @@ async function renderNewSkuScreen(data) {
       const values = siblings.map(s => s[key]).filter(v => v != null);
       if (values.length > 0) {
         const avg = Math.round(values.reduce((a, b) => a + b, 0) / values.length);
-        hintEl.textContent = `💡 같은 카테고리(${data.category_small}) 최근 평균: 약 ${avg}pcs (참고용)`;
+        hintEl.textContent = `같은 카테고리(${data.category_small}) 최근 평균: 약 ${avg}pcs (참고용)`;
         hintEl.classList.remove('hidden');
       } else {
         hintEl.classList.add('hidden');
@@ -2132,70 +2141,6 @@ async function submitNewSku() {
 // ============================================================
 // 변경 요청
 // ============================================================
-let crSelectedPoly = null;
-
-function openChangeRequest() {
-  crSelectedPoly = null;
-  document.getElementById('crPcsInput').value = '';
-  document.getElementById('crReasonInput').value = '';
-  document.querySelectorAll('#crPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
-  document.getElementById('changeRequestModal').classList.add('show');
-}
-
-function closeChangeRequest() {
-  document.getElementById('changeRequestModal').classList.remove('show');
-}
-
-document.getElementById('crPolyBtnRow').addEventListener('click', (e) => {
-  const btn = e.target.closest('.poly-btn');
-  if (!btn) return;
-  document.querySelectorAll('#crPolyBtnRow .poly-btn').forEach(b => b.classList.remove('selected'));
-  btn.classList.add('selected');
-  crSelectedPoly = btn.dataset.size;
-});
-
-async function submitChangeRequest() {
-  const requestedPcs = parseInt(document.getElementById('crPcsInput').value);
-  const reason = document.getElementById('crReasonInput').value.trim();
-
-  if (!crSelectedPoly && !requestedPcs) {
-    showToast('변경할 값을 하나 이상 입력해주세요');
-    return;
-  }
-
-  const tier = currentScan.tier;
-
-  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
-    showToast('[더미] 변경 요청이 제출되었습니다');
-    closeChangeRequest();
-    cancelToScan();
-    return;
-  }
-
-  const payload = {
-    sku: currentScan.sku,
-    requested_by: currentTable.table_code,
-    current_poly_size: currentScan.poly_size,
-    current_pcs_3tier: tier === 3 ? currentScan.pcs_for_current_tier : null,
-    current_pcs_4tier: tier === 4 ? currentScan.pcs_for_current_tier : null,
-    requested_poly_size: crSelectedPoly || currentScan.poly_size,
-    requested_pcs_3tier: tier === 3 ? (requestedPcs || currentScan.pcs_for_current_tier) : null,
-    requested_pcs_4tier: tier === 4 ? (requestedPcs || currentScan.pcs_for_current_tier) : null,
-    reason: reason || null
-  };
-
-  const { error } = await sbClient.from('change_request').insert(payload);
-  if (error) {
-    showToast('요청 제출 중 오류가 발생했습니다');
-    console.error(error);
-    return;
-  }
-
-  showToast('변경 요청이 제출되었습니다. 관리자 확인 후 반영됩니다');
-  closeChangeRequest();
-  cancelToScan();
-}
-
 // ============================================================
 // 공통: 처리 로그 저장
 // ============================================================
