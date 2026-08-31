@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <title>양품화 소테이블</title>
 <style>
-  :root { --apple-blue:#007AFF; --apple-green:#34C759; --apple-orange:#FF9500; --apple-gray5:#E5E5EA; --apple-gray6:#F2F2F7; --apple-text:#1C1C1E; --apple-text-sub:#8E8E93; --apple-bg:#F2F2F7; --apple-card:#FFFFFF; --apple-shadow:0 1px 3px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.04); --apple-radius:12px; --apple-radius-lg:16px; }
+  :root { --apple-blue:#007AFF; --apple-green:#34C759; --apple-orange:#FF9500; --apple-gray4:#D1D1D6; --apple-gray5:#E5E5EA; --apple-gray6:#F2F2F7; --apple-text:#1C1C1E; --apple-text-sub:#8E8E93; --apple-bg:#F2F2F7; --apple-card:#FFFFFF; --apple-shadow:0 1px 3px rgba(0,0,0,0.06),0 2px 8px rgba(0,0,0,0.04); --apple-radius:12px; --apple-radius-lg:16px; }
   * { box-sizing:border-box; margin:0; padding:0; }
   body { font-family:-apple-system,'SF Pro Display',BlinkMacSystemFont,'Helvetica Neue',sans-serif; background:var(--apple-bg); color:var(--apple-text); min-height:100vh; display:flex; flex-direction:column; -webkit-font-smoothing:antialiased; }
   header { background:rgba(26,26,46,0.92); backdrop-filter:blur(20px); -webkit-backdrop-filter:blur(20px); color:#fff; padding:14px 20px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; z-index:50; }
   header .title { font-size:16px; font-weight:600; letter-spacing:-0.2px; }
   header .sub-id { background:var(--apple-blue); padding:5px 14px; border-radius:20px; font-size:14px; font-weight:700; }
-  .container { flex:1; max-width:500px; margin:0 auto; padding:20px 16px; width:100%; }
+  .container { flex:1; max-width:420px; margin:0 auto; padding:20px 16px; width:100%; }
   .status-dot { display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:6px; }
   .status-dot.live { background:var(--apple-green); animation:pulse 1.5s infinite; }
   .status-dot.off { background:#D1D1D6; }
@@ -26,26 +26,26 @@
   .card-color-bar.c-white { background:var(--apple-gray5); }
   .card-color-bar.c-green { background:var(--apple-green); }
   .card-color-bar.c-orange { background:var(--apple-orange); }
-  .card-body { padding:20px; }
+  .card-body { padding:16px; }
   .card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:10px; margin-bottom:12px; }
   .card-sku { font-size:22px; font-weight:800; letter-spacing:-0.3px; margin-bottom:4px; }
   .card-option { font-size:14px; color:var(--apple-text-sub); word-break:keep-all; }
   .card-cat { display:inline-block; font-size:12px; background:rgba(0,122,255,0.08); color:var(--apple-blue); padding:3px 10px; border-radius:20px; margin-bottom:12px; font-weight:600; }
-  .btn-photo { flex-shrink:0; background:var(--apple-blue); color:#fff; text-decoration:none; font-size:14px; font-weight:600; padding:10px 18px; border-radius:20px; white-space:nowrap; transition:all 0.2s; }
+  .btn-photo { flex-shrink:0; background:var(--apple-blue); color:#fff; text-decoration:none; font-size:14px; font-weight:600; padding:10px 18px; border-radius:20px; white-space:nowrap; }
   .btn-photo:active { transform:scale(0.96); }
   .btn-photo.disabled { opacity:0.3; pointer-events:none; }
   .info-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:14px; }
-  .info-box { background:var(--apple-gray6); border-radius:var(--apple-radius); padding:14px; text-align:center; }
+  .info-box { background:var(--apple-gray6); border-radius:var(--apple-radius); padding:12px; text-align:center; }
   .info-label { font-size:12px; color:var(--apple-text-sub); margin-bottom:4px; font-weight:500; }
   .info-value { font-size:24px; font-weight:800; letter-spacing:-0.3px; }
   .bag-color-block { border-radius:var(--apple-radius); padding:16px; text-align:center; margin-bottom:16px; }
-  .bag-color-block.c-white { background:#FFFFFF; border:1.5px solid var(--apple-gray5); color:#333; }
+  .bag-color-block.c-white { background:#FFFFFF; border:1.5px solid var(--apple-gray4); color:#333; }
   .bag-color-block.c-green { background:var(--apple-green); color:#fff; }
   .bag-color-block.c-orange { background:var(--apple-orange); color:#fff; }
   .bag-color-name { font-size:20px; font-weight:700; }
   .bag-color-sub { font-size:13px; opacity:0.8; }
   .scan-time { text-align:center; font-size:12px; color:var(--apple-text-sub); margin-top:12px; }
-  .t-poly-btn { flex:1; padding:10px; border:none; border-radius:var(--apple-radius); background:var(--apple-gray6); font-size:14px; font-weight:600; color:var(--apple-text-sub); cursor:pointer; transition:all 0.2s; }
+  .t-poly-btn { flex:1; padding:10px; border:1.5px solid var(--apple-gray5); border-radius:var(--apple-radius); background:var(--apple-gray6); font-size:14px; font-weight:600; color:var(--apple-text-sub); cursor:pointer; }
   .t-poly-btn.active { background:rgba(0,122,255,0.08); color:var(--apple-blue); }
   .t-done-banner { background:rgba(52,199,89,0.12); color:#1B7A34; border-radius:var(--apple-radius); padding:14px; text-align:center; font-size:16px; font-weight:700; margin-top:12px; }
 </style>
@@ -61,14 +61,14 @@
     </div>
   </div>
   <div style="display:flex; align-items:center; gap:8px;">
-    <button onclick="forceRefresh()" style="background:none; border:none; color:#aaa; font-size:16px; cursor:pointer;" title="새로고침">🔄</button>
+    <button onclick="forceRefresh()" style="background:none; border:none; color:rgba(255,255,255,0.5); font-size:12px; font-weight:600; cursor:pointer;">새로고침</button>
     <div class="sub-id" id="subBadge">-</div>
   </div>
 </header>
 
 <div class="container">
   <div id="waitingView" class="waiting">
-    <div class="waiting-icon">📦</div>
+    
     <div class="waiting-title">대기 중</div>
     <div class="waiting-desc">스캔 담당자가 상품을 스캔하면<br>여기에 자동으로 표시됩니다</div>
   </div>
@@ -118,7 +118,7 @@
     <!-- 신규 입력 영역 (폴리/pcs 없을 때) -->
     <div id="tNewInput" style="display:none; margin-top:12px;">
       <div style="background:#fff3cd; border-radius:10px; padding:10px 14px; font-size:13px; color:#856404; margin-bottom:12px;">
-        ⚠️ 등록된 값이 없습니다. 직접 입력해주세요.
+        등록된 값이 없습니다. 직접 입력해주세요.
       </div>
       <div style="display:flex; gap:6px; margin-bottom:10px;">
         <button class="t-poly-btn" data-size="1호" onclick="selectTPoly(this)">1호</button>
@@ -136,8 +136,8 @@
 
     <!-- 완료/취소 버튼 -->
     <div id="tActionArea" style="margin-top:12px;">
-      <button id="tCompleteBtn" onclick="completeWork()" style="width:100%; padding:14px; background:#22c55e; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; display:none;">✅ 양품화 완료</button>
-      <button id="tUndoBtn" onclick="undoComplete()" style="width:100%; padding:12px; margin-top:8px; background:#fff; color:#b91c1c; border:1.5px solid #b91c1c; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; display:none;">↩️ 완료 취소 (복구)</button>
+      <button id="tCompleteBtn" onclick="completeWork()" style="width:100%; padding:14px; background:#22c55e; color:#fff; border:none; border-radius:12px; font-size:16px; font-weight:700; cursor:pointer; display:none;">양품화 완료</button>
+      <button id="tUndoBtn" onclick="undoComplete()" style="width:100%; padding:12px; margin-top:8px; background:#fff; color:#b91c1c; border:1.5px solid #b91c1c; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; display:none;">완료 취소</button>
     </div>
 
     <div class="scan-time" id="tTime">-</div>
@@ -162,7 +162,7 @@ if (subTable) {
   startPolling();
 } else {
   document.getElementById('waitingView').innerHTML =
-    '<div class="waiting-icon">⚠️</div>' +
+    '' +
     '<div class="waiting-title">소테이블 미지정</div>' +
     '<div class="waiting-desc">QR코드를 통해 접속해주세요</div>';
 }
@@ -352,7 +352,7 @@ function completeWork() {
     banner.className = 't-done-banner';
     document.getElementById('tActionArea').prepend(banner);
   }
-  banner.textContent = '✅ 양품화 완료';
+  banner.textContent = '양품화 완료';
   banner.style.display = '';
 }
 
