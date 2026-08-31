@@ -12,12 +12,11 @@
   .desc { font-size:14px; color:var(--apple-text-sub); margin-bottom:20px; }
   .setup { background:var(--apple-card); border:none; border-radius:16px; padding:20px; margin-bottom:20px; box-shadow:var(--apple-shadow); }
   .setup label { font-size:13px; font-weight:600; display:block; margin-bottom:6px; color:var(--apple-text-sub); text-transform:uppercase; letter-spacing:0.3px; }
-  .hint { font-size:12px; color:var(--apple-text-sub); margin-top:-4px; margin-bottom:12px; }
   .btn-row { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:16px; }
-  .btn-opt { padding:10px 16px; border:none; border-radius:var(--apple-radius); background:var(--apple-gray6); font-size:14px; font-weight:600; color:var(--apple-text-sub); cursor:pointer; transition:all 0.2s; }
+  .btn-opt { padding:10px 16px; border:none; border-radius:var(--apple-radius); background:var(--apple-gray6); font-size:14px; font-weight:600; color:var(--apple-text-sub); cursor:pointer; }
   .btn-opt.active { background:var(--apple-blue); color:#fff; }
   .btn-opt:active { transform:scale(0.96); }
-  .btn-gen { width:100%; padding:14px; font-size:16px; font-weight:600; background:var(--apple-blue); color:#fff; border:none; border-radius:var(--apple-radius); cursor:pointer; margin-bottom:8px; transition:all 0.2s; }
+  .btn-gen { width:100%; padding:14px; font-size:16px; font-weight:600; background:var(--apple-blue); color:#fff; border:none; border-radius:var(--apple-radius); cursor:pointer; margin-bottom:8px; }
   .btn-gen:active { transform:scale(0.98); }
   .btn-print { width:100%; padding:14px; font-size:15px; font-weight:600; background:var(--apple-card); color:var(--apple-blue); border:none; border-radius:var(--apple-radius); cursor:pointer; box-shadow:var(--apple-shadow); }
   .qr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(180px, 1fr)); gap:12px; }
@@ -47,7 +46,7 @@
   <div class="btn-row" id="tableRow"></div>
 
   <button class="btn-gen" onclick="generateQRs()">QR코드 생성</button>
-  <button class="btn-print" id="printBtn" style="display:none;" onclick="window.print()">🖨 인쇄하기</button>
+  <button class="btn-print" id="printBtn" style="display:none;" onclick="window.print()">인쇄하기</button>
 </div>
 
 <div class="qr-grid" id="qrGrid"></div>
