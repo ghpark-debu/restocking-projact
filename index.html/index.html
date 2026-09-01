@@ -940,7 +940,7 @@ function enterCollectMode() {
   const afterLoad = () => { buildCollectLists(); switchPrio(currentPrio); };
   if (DUMMY_MODE) {
     afterLoad();
-  } else if (SHEET_MODE) {
+  } else if (SUPABASE_MODE || SHEET_MODE) {
     if (sheetIndex) { afterLoad(); }
     else {
       preloadSheetIndex().then(afterLoad).catch((e) => {
@@ -1214,19 +1214,17 @@ async function submitEditRequest() {
   if (btn) { btn.disabled = true; btn.textContent = '제출 중...'; }
 
   try {
-    if (SHEET_MODE) {
-      await saveChangeRequestToSheet({
-        sku: item.sku,
-        categorySmall: item.category_small || '',
-        location: item.location_code || '',
-        currentPoly: item.poly_size || '',
-        requestPoly: editReqPoly || item.poly_size || '',
-        tier: bagExcluded ? '' : item.tier,
-        currentPcs: bagExcluded ? null : curPcs,
-        requestPcs: bagExcluded ? null : (reqPcs || curPcs),
-        reason: reason
-      });
-    }
+    await saveChangeRequestToSheet({
+      sku: item.sku,
+      categorySmall: item.category_small || '',
+      location: item.location_code || '',
+      currentPoly: item.poly_size || '',
+      requestPoly: editReqPoly || item.poly_size || '',
+      tier: bagExcluded ? '' : item.tier,
+      currentPcs: bagExcluded ? null : curPcs,
+      requestPcs: bagExcluded ? null : (reqPcs || curPcs),
+      reason: reason
+    });
     showToast('수정요청이 제출되었습니다 (관리자 확인 후 반영)');
     backToCollectList();
   } catch (e) {
@@ -1396,13 +1394,13 @@ async function submitCollect() {
   if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
 
   try {
-    if (SHEET_MODE) {
+    if (SUPABASE_MODE || SHEET_MODE) {
       const payload = {
         sku: collectScan.sku,
         categorySmall: collectScan.category_small || ''
       };
-      if (hasPoly) payload.polySize = collectSelectedPoly;   // 폴리 입력했을 때만
-      if (hasPcs) { payload.tier = tier; payload.pcs = pcsValue; } // pcs 입력했을 때만
+      if (hasPoly) payload.polySize = collectSelectedPoly;
+      if (hasPcs) { payload.tier = tier; payload.pcs = pcsValue; }
       await saveNewSkuToSheet(payload);
 
       // 로컬 인덱스 즉시 갱신(양단 자동 계산 포함)
@@ -2041,8 +2039,7 @@ async function submitNewSku() {
   const tier = currentScan.tier;
   const sku = currentScan.sku;
 
-  if (SHEET_MODE) {
-    // 시트모드: 시트에 실제 저장 + 로컬 인덱스 즉시 갱신
+  if (SUPABASE_MODE || SHEET_MODE) {
     const btn = document.querySelector('#screenNewSku .btn-primary');
     if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
     try {
