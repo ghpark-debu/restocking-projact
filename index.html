@@ -1631,9 +1631,13 @@ let sheetIndexLoading = null;
 // Supabase REST API 헬퍼
 async function sbFetch(path) {
   const resp = await fetch(SUPABASE_URL + '/rest/v1/' + path, {
-    headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    headers: {
+      'apikey': SUPABASE_ANON_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Range': '0-49999'
+    }
   });
-  if (!resp.ok) throw new Error('Supabase ' + resp.status);
+  if (!resp.ok && resp.status !== 206) throw new Error('Supabase ' + resp.status);
   return resp.json();
 }
 
@@ -1702,6 +1706,12 @@ async function loadSupabaseIndex() {
   const categoryBySku = {};
   catRows.forEach(r => { if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large||'', category_small: r.category_small||'' }; });
   sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku };
+  console.log('Supabase 인덱스 로드 완료:', 
+    '전표', Object.keys(invoiceByOption).length,
+    '/ 폴리', Object.keys(polyBySku).length,
+    '/ 대봉', Object.keys(bagBySku).length,
+    '/ 재고', Object.keys(stockByOption).length,
+    '/ 카테고리', Object.keys(categoryBySku).length);
   return sheetIndex;
 }
 
