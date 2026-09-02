@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>QR코드 생성</title>
+<style>
+  :root { --ink:#0f172a; --ink-mute:#94a3b8; --surface:#f8fafc; --card:#ffffff; --ring:#e2e8f0; --blue:#3b82f6; --shadow:0 1px 3px rgba(15,23,42,0.06),0 4px 12px rgba(15,23,42,0.03); --r:10px; }
+  * { box-sizing:border-box; margin:0; padding:0; }
+  body { font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',system-ui,sans-serif; background:var(--surface); color:var(--ink); padding:16px; -webkit-font-smoothing:antialiased; }
+  h1 { font-size:20px; font-weight:700; margin-bottom:4px; }
+  .desc { font-size:13px; color:var(--ink-mute); margin-bottom:16px; }
+  .setup { background:var(--card); border:1px solid var(--ring); border-radius:14px; padding:16px; margin-bottom:16px; box-shadow:var(--shadow); }
+  .setup label { font-size:11px; font-weight:600; display:block; margin-bottom:4px; color:var(--ink-mute); text-transform:uppercase; letter-spacing:0.03em; }
+  .btn-row { display:flex; gap:4px; flex-wrap:wrap; margin-bottom:14px; }
+  .btn-opt { padding:8px 14px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:13px; font-weight:600; color:var(--ink-mute); cursor:pointer; }
+  .btn-opt.active { background:var(--ink); color:#fff; border-color:var(--ink); }
+  .btn-gen { width:100%; padding:12px; font-size:15px; font-weight:600; background:var(--blue); color:#fff; border:none; border-radius:var(--r); cursor:pointer; margin-bottom:6px; }
+  .btn-print { width:100%; padding:12px; font-size:14px; font-weight:600; background:var(--card); color:var(--blue); border:1px solid var(--ring); border-radius:var(--r); cursor:pointer; }
+  .qr-grid { display:grid; grid-template-columns:repeat(auto-fill, minmax(160px, 1fr)); gap:10px; }
+  .qr-card { background:var(--card); border:1px solid var(--ring); border-radius:14px; padding:14px; text-align:center; }
+  .qr-label { font-size:16px; font-weight:700; margin-bottom:8px; }
+  .qr-url { display:none !important; }
+  @media print {
+    body { padding:0; background:#fff; }
+    .setup, h1, .desc { display:none !important; }
+    .qr-grid { grid-template-columns:repeat(4, 1fr); gap:6px; }
+    .qr-card { border:1px solid #ddd; padding:6px; page-break-inside:avoid; box-shadow:none; }
+    .qr-label { font-size:13px; }
+  }
+</style>
+</head>
+<body>
+
+<h1>QR코드 생성</h1>
+<p class="desc">소테이블용 QR과 양품화 작업(스캔)용 QR을 생성합니다.</p>
+
+<div class="setup">
+  <label>QR 종류</label>
+  <div class="btn-row" id="qrTypeRow">
+    <button class="btn-opt active" data-type="sub" onclick="setQrType('sub')">소테이블용</button>
+    <button class="btn-opt" data-type="scan" onclick="setQrType('scan')">양품화 작업용</button>
+  </div>
+
+  <label>층 선택</label>
+  <div class="btn-row" id="floorRow"></div>
+
+  <div id="tableSelectArea">
+    <label>대테이블 선택</label>
+    <div class="btn-row" id="tableRow"></div>
+  </div>
+
+  <button class="btn-gen" onclick="generateQRs()">QR코드 생성</button>
+  <button class="btn-print" id="printBtn" style="display:none;" onclick="window.print()">인쇄하기</button>
+</div>
+
+<div class="qr-grid" id="qrGrid"></div>
+
+<script>
+var SUB_TABLE_BASE = 'https://ghpark-debu.github.io/restocking-projact/table.html';
+var SCAN_BASE = 'https://ghpark-debu.github.io/restocking-projact/';
+var TABLES = [1, 2, 3, 4, 5, 6, 7];
+var SUB_COUNT = 8;
+var selectedFloor = '3층';
+var selectedTable = null;
+var qrType = 'sub';
+
+function setQrType(type) {
+  qrType = type;
+  var btns = document.querySelectorAll('#qrTypeRow .btn-opt');
+  for (var i = 0; i < btns.length; i++) {
+    btns[i].classList.toggle('active', btns[i].getAttribute('data-type') === type);
+  }
+  document.getElementById('tableSelectArea').style.display = type === 'sub' ? '' : 'none';
+  document.getElementById('qrGrid').innerHTML = '';
+  document.getElementById('printBtn').style.display = 'none';
+}
+
+function renderFloorBtns() {
+  var row = document.getElementById('floorRow');
+  row.innerHTML = '';
+  var floors = ['3층', '2층'];
+  for (var i = 0; i < floors.length; i++) {
+    var f = floors[i];
+    var btn = document.createElement('button');
+    btn.className = 'btn-opt' + (f === selectedFloor ? ' active' : '');
+    btn.textContent = f;
+    btn.setAttribute('data-floor', f);
+    btn.onclick = function() { selectedFloor = this.getAttribute('data-floor'); renderFloorBtns(); renderTableBtns(); };
+    row.appendChild(btn);
+  }
+}
+
+function renderTableBtns() {
+  var row = document.getElementById('tableRow');
+  row.innerHTML = '';
+  var allBtn = document.createElement('button');
+  allBtn.className = 'btn-opt' + (selectedTable === null ? ' active' : '');
+  allBtn.textContent = '전체';
+  allBtn.onclick = function() { selectedTable = null; renderTableBtns(); };
+  row.appendChild(allBtn);
+  for (var i = 0; i < TABLES.length; i++) {
+    var t = TABLES[i];
+    var btn = document.createElement('button');
+    btn.className = 'btn-opt' + (selectedTable === t ? ' active' : '');
+    btn.textContent = t + '번';
+    btn.setAttribute('data-t', t);
+    btn.onclick = function() { selectedTable = parseInt(this.getAttribute('data-t')); renderTableBtns(); };
+    row.appendChild(btn);
+  }
+}
+
+function generateQRs() {
+  var grid = document.getElementById('qrGrid');
+  grid.innerHTML = '';
+
+  if (qrType === 'scan') {
+    for (var i = 0; i < TABLES.length; i++) {
+      var tableId = selectedFloor + '-' + TABLES[i];
+      var url = SCAN_BASE + '?table=' + encodeURIComponent(tableId);
+      grid.appendChild(makeQrCard(tableId, url));
+    }
+  } else {
+    var tables = selectedTable ? [selectedTable] : TABLES;
+    for (var i = 0; i < tables.length; i++) {
+      for (var s = 1; s <= SUB_COUNT; s++) {
+        var subId = selectedFloor + '-' + tables[i] + '-' + s;
+        var url = SUB_TABLE_BASE + '?t=' + encodeURIComponent(subId);
+        grid.appendChild(makeQrCard(subId, url));
+      }
+    }
+  }
+
+  document.getElementById('printBtn').style.display = '';
+}
+
+function makeQrCard(label, url) {
+  var card = document.createElement('div');
+  card.className = 'qr-card';
+  var labelEl = document.createElement('div');
+  labelEl.className = 'qr-label';
+  labelEl.textContent = label;
+  card.appendChild(labelEl);
+  var img = document.createElement('img');
+  img.src = 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=' + encodeURIComponent(url) + '&margin=4';
+  img.width = 150;
+  img.height = 150;
+  img.alt = label;
+  card.appendChild(img);
+  return card;
+}
+
+renderFloorBtns();
+renderTableBtns();
+</script>
+</body>
+</html>
