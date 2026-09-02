@@ -1610,7 +1610,7 @@ function showLastScanResult(data) {
 
 // Supabase current_work 테이블에 직접 upsert
 async function pushToSubTableSupabase(p) {
-  const url = SUPABASE_URL + '/rest/v1/current_work';
+  const url = SUPABASE_URL + '/rest/v1/current_work?on_conflict=sub_table';
   const body = {
     sub_table: p.subTable,
     sku: p.sku,
@@ -1624,7 +1624,7 @@ async function pushToSubTableSupabase(p) {
     category_small: p.categorySmall,
     scanned_at: new Date().toISOString()
   };
-  await fetch(url, {
+  const resp = await fetch(url, {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY,
@@ -1634,6 +1634,7 @@ async function pushToSubTableSupabase(p) {
     },
     body: JSON.stringify(body)
   });
+  if (!resp.ok) console.error('소테이블 전송 실패:', resp.status, await resp.text());
 }
 
 // ===== 프리로드 인덱스(스캔 속도 향상용) =====
