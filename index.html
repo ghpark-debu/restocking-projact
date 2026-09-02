@@ -1825,15 +1825,17 @@ async function handleBarcodeScan(rawBarcode) {
   }
 
   if (!data) {
-    showToast('전표DB에서 이 옵션코드를 찾을 수 없습니다');
+    showToast('옵션코드 [' + optionCode + '] 를 찾을 수 없습니다');
+    console.log('조회 실패 옵션코드:', optionCode, '/ 원본 바코드:', rawBarcode);
+    console.log('invoiceByOption 키 샘플:', sheetIndex ? Object.keys(sheetIndex.invoiceByOption).slice(0, 5) : 'sheetIndex 없음');
     return;
   }
 
   currentScan = data;
 
+  // tier가 null이면(낱장존/로케이션 없음) — 차단하지 않고 결과 표시, 대봉 정보만 없음 처리
   if (data.tier === null) {
-    showToast('낱장존 상품입니다 (양품화 대상 아님)');
-    return;
+    data.pcs_for_current_tier = null;
   }
 
   if (data.is_wanpoly) {
