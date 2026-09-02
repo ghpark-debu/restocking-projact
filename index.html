@@ -1865,14 +1865,18 @@ async function handleBarcodeScan(rawBarcode) {
     return;
   }
 
-  const hasValues = data.poly_size && data.pcs_for_current_tier != null;
-  if (hasValues) {
-    // 기존값 있음 — 스캔 화면에 머물면서 하단에 정보만 표시 + 소테이블 전송
+  // ★ UX 단계 설정 — 2단계 시작 시 STAGE를 2로 변경
+  // 1단계: 스캔+확인만 (신규 입력 없음)
+  // 2단계: 신규 등록 활성화
+  const STAGE = 1;
+
+  if (STAGE >= 2 && !data.poly_size && data.pcs_for_current_tier == null) {
+    renderNewSkuScreen(data);
+  } else {
+    // 기존값이든 미등록이든 — 스캔 화면에 머물면서 정보 표시 + 소테이블 전송
     showLastScanResult(data);
     trySendToSubTable(data);
     focusBarcodeInput();
-  } else {
-    renderNewSkuScreen(data);
   }
 }
 
