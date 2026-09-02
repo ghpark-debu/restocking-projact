@@ -1575,15 +1575,35 @@ function trySendToSubTable(data) {
 }
 
 function showLastScanInfo(data) {
+  showLastScanResult(data);
+}
+
+function showLastScanResult(data) {
   const el = document.getElementById('lastScanInfo');
   const detail = document.getElementById('lastScanDetail');
   if (!el || !detail) return;
+
+  const floor = floorFromLocation(data.location_code);
+  const bagColor = floor ? bagColorOfFloor(floor) : '-';
+  const tierText = data.tier ? data.tier + '단' : '-';
+
   detail.innerHTML =
-    '<div style="font-weight:700; margin-bottom:2px;">' + (data.sku || '-') + '</div>' +
-    '<div>' + (data.option_name || '') + '</div>' +
-    '<div style="margin-top:4px; display:flex; gap:12px;">' +
+    '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">' +
+      '<div>' +
+        '<div style="font-weight:700; font-size:15px;">' + (data.sku || '-') + '</div>' +
+        '<div style="font-size:12px; color:var(--ink-3);">' + (data.option_name || '') + '</div>' +
+        '<div style="font-size:12px; color:var(--ink-3);">' + (data.product_name || '') + '</div>' +
+      '</div>' +
+      '<div style="text-align:right; font-size:12px;">' +
+        '<div style="font-weight:700; color:var(--blue);">' + (currentSubTable || '-') + '</div>' +
+        '<div style="color:var(--ink-mute);">전송</div>' +
+      '</div>' +
+    '</div>' +
+    '<div style="display:flex; gap:12px; font-size:12px; color:var(--ink-2);">' +
       '<span>로케이션 <b>' + (data.location_code || '-') + '</b></span>' +
-      '<span>전송 <b>' + (currentSubTable || '-') + '</b></span>' +
+      '<span>폴리 <b>' + (data.poly_size || '-') + '</b></span>' +
+      '<span>pcs <b>' + (data.pcs_for_current_tier != null ? data.pcs_for_current_tier : '-') + '</b></span>' +
+      '<span>' + bagColor + ' <b>' + tierText + '</b></span>' +
     '</div>';
   el.style.display = '';
 }
@@ -1847,7 +1867,10 @@ async function handleBarcodeScan(rawBarcode) {
 
   const hasValues = data.poly_size && data.pcs_for_current_tier != null;
   if (hasValues) {
-    renderResultScreen(data);
+    // 기존값 있음 — 스캔 화면에 머물면서 하단에 정보만 표시 + 소테이블 전송
+    showLastScanResult(data);
+    trySendToSubTable(data);
+    focusBarcodeInput();
   } else {
     renderNewSkuScreen(data);
   }
