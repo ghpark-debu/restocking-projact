@@ -439,7 +439,6 @@
   <!-- ============== 화면 4: 스캔 결과(기존 값 있음) ============== -->
   <div id="screenResult" class="hidden" style="display:none">
     <div class="result-card">
-      <!-- 상단: 좌(SKU 정보) / 우(상품확인 버튼) -->
       <div class="result-top">
         <div class="result-top-left">
           <div class="sku" id="resSku">-</div>
@@ -448,11 +447,10 @@
         <a href="#" id="resPhotoLink" class="btn-confirm" target="_blank">상품확인</a>
       </div>
 
+      <div id="resSentTo" style="font-size:13px; color:var(--blue); font-weight:600; margin:8px 0;"></div>
       <div class="badge-row" id="resBadgeRow"></div>
 
-      <!-- 좌우 2분할 -->
       <div class="split-layout">
-        <!-- 왼쪽 -->
         <div class="split-left">
           <div class="floor-box" id="resFloorBox">
             <div class="floor-name" id="resFloorName">3층</div>
@@ -467,19 +465,13 @@
             <div class="split-value big" id="resPcs">-</div>
           </div>
         </div>
-        <!-- 오른쪽 -->
         <div class="split-right">
           <div id="resDefectNote" class="hidden"></div>
-          <div class="split-right-spacer" id="resRightSpacer">
-            <div class="split-hint">스캔한 상품 정보입니다.<br>값이 맞으면 완료를 눌러주세요.</div>
-          </div>
+          <div class="split-right-spacer" id="resRightSpacer"></div>
         </div>
       </div>
-
-      <button class="btn-primary" onclick="submitProcessing()">완료</button>
-      <button class="btn-secondary" onclick="openEditRequestForItem(currentScan)">이 값이 잘못됐어요 (변경요청)</button>
     </div>
-    <button class="btn-secondary" onclick="cancelToScan()">취소하고 다시 스캔</button>
+    <button class="btn-secondary" onclick="cancelAndClearSubTable()">취소하고 다시 스캔</button>
   </div>
 
   <!-- ============== 화면 5: 신규 SKU 입력 ============== -->
@@ -1868,6 +1860,21 @@ function cancelToScan() {
   focusBarcodeInput();
 }
 
+// 취소하고 다시 스캔 — 소테이블 전송 데이터도 삭제
+async function cancelAndClearSubTable() {
+  if (currentSubTable && SUPABASE_MODE) {
+    // 소테이블 데이터를 빈 값으로 업데이트 (삭제 대신)
+    try {
+      await sbPost('current_work?on_conflict=sub_table', {
+        sub_table: currentSubTable, sku: '', option_name: '', product_name: '',
+        poly: '', pcs: null, bag_color: '', tier: null, location_code: '',
+        category_small: '', scanned_at: new Date().toISOString()
+      });
+    } catch (e) { console.error('소테이블 데이터 삭제 실패:', e); }
+  }
+  cancelToScan();
+}
+
 // ============================================================
 // 완폴리 화면
 // ============================================================
@@ -1963,6 +1970,12 @@ function renderResultScreen(data) {
 
   // 상품확인 버튼 링크
   setPhotoLink('resPhotoLink', data.sku);
+
+  // 전송한 소테이블 번호 표시
+  const sentTo = document.getElementById('resSentTo');
+  if (sentTo) {
+    sentTo.textContent = currentSubTable ? (currentSubTable + ' 소테이블로 전송됨') : '';
+  }
 
   showScreen('screenResult');
 
