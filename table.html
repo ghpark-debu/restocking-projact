@@ -302,14 +302,27 @@ function undoComplete() {
   renderLog();
 
   if (prevData) {
-    // Supabase에 이전 데이터 다시 넣기
+    // Supabase에 이전 데이터 다시 넣기 (필요한 필드만)
+    var restoreData = {
+      sub_table: subTable,
+      sku: prevData.sku || '',
+      option_name: prevData.option_name || '',
+      product_name: prevData.product_name || '',
+      poly: prevData.poly || '',
+      pcs: prevData.pcs != null ? prevData.pcs : null,
+      bag_color: prevData.bag_color || '',
+      tier: prevData.tier != null ? prevData.tier : null,
+      location_code: prevData.location_code || '',
+      category_small: prevData.category_small || '',
+      scanned_at: prevData.scanned_at || new Date().toISOString()
+    };
     fetch(SUPABASE_URL + '/rest/v1/current_work?on_conflict=sub_table', {
       method: 'POST',
       headers: {
         'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
         'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
       },
-      body: JSON.stringify(prevData)
+      body: JSON.stringify(restoreData)
     }).catch(function(e) { console.error('복구 실패:', e); });
 
     // 화면에 이전 데이터 바로 표시
