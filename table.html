@@ -152,6 +152,7 @@ var currentData = null;
 var prevData = null; // 완료 취소용 백업
 var isCompleted = false;
 var workLog = []; // 로컬 로그
+var lastLogId = null; // 마지막 저장된 processing_log id (취소 시 삭제용)
 
 // 탭 전환
 function switchTab(tab) {
@@ -270,8 +271,8 @@ function completeWork() {
   isCompleted = true;
   prevData = JSON.parse(JSON.stringify(currentData)); // 취소용 백업
 
-  // 로그에 추가
-  workLog.unshift({
+  // 로컬 로그에 추가
+  var logEntry = {
     sku: currentData.sku,
     option: currentData.option_name || '',
     product: currentData.product_name || '',
@@ -279,8 +280,39 @@ function completeWork() {
     poly: currentData.poly || '',
     pcs: currentData.pcs,
     time: new Date().toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
-  });
+  };
+  workLog.unshift(logEntry);
   renderLog();
+
+  // Supabase processing_log에 완료 기록 저장
+  fetch(SUPABASE_URL + '/rest/v1/processing_log', {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
+    },
+    body: JSON.stringify({
+      sub_table: subTable,
+      sku: currentData.sku || '',
+      option_name: currentData.option_name || '',
+      product_name: currentData.product_name || '',
+      poly: currentData.poly || '',
+      pcs: currentData.pcs != null ? currentData.pcs : null,
+      bag_color: currentData.bag_color || '',
+      tier: currentData.tier != null ? currentData.tier : null,
+      location_code: currentData.location_code || '',
+      category_small: currentData.category_small || ''
+    })
+  })
+  .then(function(resp) {
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    return resp.json();
+  })
+  .then(function(rows) {
+    // 저장된 로그의 id를 기억 (취소 시 삭제용)
+    if (rows && rows.length) lastLogId = rows[0].id;
+  })
+  .catch(function(e) { console.error('로그 저장 실패:', e); });
 
   // 화면 전환: 상품정보 숨기고 완료 배너 + 취소 버튼
   document.getElementById('infoView').style.display = 'none';
@@ -300,9 +332,18 @@ function completeWork() {
 // 완료 취소 — 이전 작업 데이터 복구
 function undoComplete() {
   isCompleted = false;
-  // 로그에서 마지막 항목 제거
+  // 로컬 로그에서 마지막 항목 제거
   if (workLog.length) workLog.shift();
   renderLog();
+
+  // Supabase processing_log에서 해당 로그 삭제
+  if (lastLogId) {
+    fetch(SUPABASE_URL + '/rest/v1/processing_log?id=eq.' + lastLogId, {
+      method: 'DELETE',
+      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+    }).catch(function(e) { console.error('로그 삭제 실패:', e); });
+    lastLogId = null;
+  }
 
   if (prevData) {
     // Supabase에 이전 데이터 다시 넣기 (필요한 필드만)
