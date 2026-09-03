@@ -149,6 +149,7 @@ var params = new URLSearchParams(window.location.search);
 var subTable = params.get('t');
 var lastScanTime = '';
 var currentData = null;
+var prevData = null; // 완료 취소용 백업
 var isCompleted = false;
 var workLog = []; // 로컬 로그
 
@@ -264,6 +265,7 @@ function renderInfo(data) {
 function completeWork() {
   if (!currentData) return;
   isCompleted = true;
+  prevData = JSON.parse(JSON.stringify(currentData)); // 취소용 백업
 
   // 로그에 추가
   workLog.unshift({
@@ -292,16 +294,33 @@ function completeWork() {
   }).catch(function(e) { console.error('완료 처리 실패:', e); });
 }
 
-// 완료 취소
+// 완료 취소 — 이전 작업 데이터 복구
 function undoComplete() {
   isCompleted = false;
   // 로그에서 마지막 항목 제거
   if (workLog.length) workLog.shift();
   renderLog();
-  // 대기 화면으로
-  lastScanTime = '';
-  showWaiting();
-  fetchInfo(); // 즉시 폴링 재개
+
+  if (prevData) {
+    // Supabase에 이전 데이터 다시 넣기
+    fetch(SUPABASE_URL + '/rest/v1/current_work?on_conflict=sub_table', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify(prevData)
+    }).catch(function(e) { console.error('복구 실패:', e); });
+
+    // 화면에 이전 데이터 바로 표시
+    lastScanTime = '';
+    renderInfo(prevData);
+    prevData = null;
+  } else {
+    lastScanTime = '';
+    showWaiting();
+    fetchInfo();
+  }
 }
 
 // 로그 렌더링
