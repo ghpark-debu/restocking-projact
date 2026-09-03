@@ -274,27 +274,14 @@
 
     <div id="adminTabSync" class="hidden">
       <div class="result-card">
-        <div style="font-weight:700; margin-bottom:10px;">시트 → Supabase 동기화</div>
+        <div style="font-weight:700; margin-bottom:10px;">데이터 새로고침</div>
         <div style="font-size:14px; color:var(--text-sub); line-height:1.7; margin-bottom:16px;">
-          구글 시트의 데이터를 Supabase로 동기화합니다.<br>
-          전표DB / SKU별폴리 / SKU별대봉 / 불량체크포인트 / 재고DB / 카테고리DB 전부 동기화됩니다.
+          시트 → Supabase 동기화는 <b>스프레드시트</b>에서 실행하세요.<br>
+          (양품화 동기화 → 전체 동기화)<br><br>
+          동기화 후 아래 버튼을 눌러 앱 데이터를 갱신합니다.
         </div>
-        <button id="syncAllBtn" onclick="runSyncAll()" style="width:100%; padding:14px; background:#2563eb; color:#fff; border:none; border-radius:10px; font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">전체 동기화 실행</button>
-        <button onclick="runClearCache()" style="width:100%; padding:12px; background:#fff; color:#2563eb; border:1.5px solid #2563eb; border-radius:10px; font-size:14px; font-weight:600; cursor:pointer; margin-bottom:10px;">캐시 초기화</button>
-        <div id="syncResultAdmin" style="font-size:13px; color:var(--text-sub); text-align:center; white-space:pre-line;"></div>
-      </div>
-
-      <div class="result-card" style="margin-top:12px;">
-        <div style="font-weight:700; margin-bottom:10px;">개별 동기화</div>
-        <div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">
-          <button onclick="runSync('qualitySyncInvoice')" class="btn-sync-item">전표DB</button>
-          <button onclick="runSync('qualitySyncPoly')" class="btn-sync-item">SKU별폴리</button>
-          <button onclick="runSync('qualitySyncBag')" class="btn-sync-item">SKU별대봉</button>
-          <button onclick="runSync('qualitySyncDefectHint')" class="btn-sync-item">불량체크포인트</button>
-          <button onclick="runSync('qualitySyncStock')" class="btn-sync-item">재고DB</button>
-          <button onclick="runSync('qualitySyncCategory')" class="btn-sync-item">카테고리DB</button>
-        </div>
-        <div id="syncItemResult" style="font-size:13px; color:var(--text-sub); text-align:center; margin-top:8px;"></div>
+        <button onclick="adminReloadData()" style="width:100%; padding:14px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">데이터 새로고침</button>
+        <div id="syncResultAdmin" style="font-size:13px; color:var(--text-sub); text-align:center;"></div>
       </div>
     </div>
   </div>
@@ -995,53 +982,27 @@ function escapeHtml(s) {
   return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
-// ===== DB 동기화 (google.script.run으로 서버 함수 실행) =====
-function runSyncAll() {
-  const btn = document.getElementById('syncAllBtn');
+// ===== DB 새로고침 (Supabase에서 인덱스 다시 로드) =====
+async function adminReloadData() {
   const result = document.getElementById('syncResultAdmin');
-  btn.disabled = true; btn.textContent = '동기화 중... (1~2분 소요)';
-  result.textContent = '';
-  google.script.run
-    .withSuccessHandler(function() {
-      btn.disabled = false; btn.textContent = '전체 동기화 실행';
-      result.textContent = '✅ 전체 동기화 완료';
-      result.style.color = '#2e7d32';
-    })
-    .withFailureHandler(function(e) {
-      btn.disabled = false; btn.textContent = '전체 동기화 실행';
-      result.textContent = '❌ 실패: ' + (e.message || e);
-      result.style.color = '#b91c1c';
-    })
-    .qualitySyncAll();
-}
-
-function runClearCache() {
-  google.script.run
-    .withSuccessHandler(function() { showToast('캐시 초기화 완료'); })
-    .withFailureHandler(function(e) { showToast('실패: ' + e.message); })
-    .qualityClearCache();
-}
-
-function runSync(fnName) {
-  const result = document.getElementById('syncItemResult');
-  result.textContent = fnName + ' 실행 중...';
-  result.style.color = 'var(--accent)';
-  const runner = google.script.run
-    .withSuccessHandler(function(msg) {
-      result.textContent = '✅ ' + (msg || '완료');
-      result.style.color = '#2e7d32';
-    })
-    .withFailureHandler(function(e) {
-      result.textContent = '❌ ' + (e.message || e);
-      result.style.color = '#b91c1c';
-    });
-  // 함수명으로 직접 호출
-  if (fnName === 'qualitySyncInvoice') runner.qualitySyncInvoice();
-  else if (fnName === 'qualitySyncPoly') runner.qualitySyncPoly();
-  else if (fnName === 'qualitySyncBag') runner.qualitySyncBag();
-  else if (fnName === 'qualitySyncDefectHint') runner.qualitySyncDefectHint();
-  else if (fnName === 'qualitySyncStock') runner.qualitySyncStock();
-  else if (fnName === 'qualitySyncCategory') runner.qualitySyncCategory();
+  result.textContent = '불러오는 중...';
+  result.style.color = 'var(--blue)';
+  sheetIndex = null;
+  sheetIndexLoading = null;
+  try {
+    const idx = await preloadSheetIndex();
+    const counts = [];
+    if (idx.invoiceByOption) counts.push('전표 ' + Object.keys(idx.invoiceByOption).length);
+    if (idx.stockByOption) counts.push('재고 ' + Object.keys(idx.stockByOption).length);
+    if (idx.polyBySku) counts.push('폴리 ' + Object.keys(idx.polyBySku).length);
+    if (idx.bagBySku) counts.push('대봉 ' + Object.keys(idx.bagBySku).length);
+    if (idx.categoryBySku) counts.push('카테고리 ' + Object.keys(idx.categoryBySku).length);
+    result.textContent = '완료 — ' + counts.join(' · ');
+    result.style.color = '#15803d';
+  } catch (e) {
+    result.textContent = '실패: ' + e.message;
+    result.style.color = '#b91c1c';
+  }
 }
 
 function enterQualityMode() {
