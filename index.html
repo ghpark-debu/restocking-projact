@@ -2380,15 +2380,12 @@ function showToast(msg) {
 // 시작
 // ============================================================
 (function init() {
-  // 관리자 링크는 onclick=openAdmin()으로 동작(별도 URL 불필요)
-
-  // 더미모드 표시
-  if (DUMMY_MODE) {
-    console.log('%c[더미모드] Supabase 없이 테스트 중입니다.', 'color:#d97706;font-weight:bold');
-    console.log('테스트용 바코드: i1822S1702693(재고42·기존값4단), i1822S2772486(재고3·경고), i1822S2725395(재고0·차단), i1822S9999999(재고15·신규)');
-  }
-
   renderTableGrid();
+
+  // 앱 시작 시 Supabase 인덱스 미리 로드
+  if (SUPABASE_MODE) {
+    preloadSheetIndex().catch(function(e) { console.error('인덱스 로드 실패:', e); });
+  }
 
   // URL 파라미터로 테이블 자동 선택 (?table=3층-1)
   const urlParams = new URLSearchParams(window.location.search);
