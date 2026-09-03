@@ -279,6 +279,7 @@ function completeWork() {
     location: currentData.location_code || '',
     poly: currentData.poly || '',
     pcs: currentData.pcs,
+    expectedQty: currentData.expected_qty || 0,
     time: new Date().toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' })
   };
   workLog.unshift(logEntry);
@@ -301,7 +302,8 @@ function completeWork() {
       bag_color: currentData.bag_color || '',
       tier: currentData.tier != null ? currentData.tier : null,
       location_code: currentData.location_code || '',
-      category_small: currentData.category_small || ''
+      category_small: currentData.category_small || '',
+      expected_qty: currentData.expected_qty || 0
     })
   })
   .then(function(resp) {
