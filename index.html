@@ -1624,6 +1624,7 @@ async function pushToSubTableSupabase(p) {
     category_small: p.categorySmall,
     scanned_at: new Date().toISOString()
   };
+  console.log('소테이블 전송 body:', JSON.stringify(body));
   const resp = await fetch(url, {
     method: 'POST',
     headers: {
@@ -1635,6 +1636,8 @@ async function pushToSubTableSupabase(p) {
     body: JSON.stringify(body)
   });
   if (!resp.ok) console.error('소테이블 전송 실패:', resp.status, await resp.text());
+  else console.log('소테이블 전송 성공:', resp.status);
+}
 }
 
 // ===== 프리로드 인덱스(스캔 속도 향상용) =====
