@@ -180,7 +180,7 @@ function forceRefresh() {
 }
 
 function fetchInfo() {
-  if (!subTable || isCompleted) return; // 완료 상태면 폴링 스킵
+  if (!subTable) return;
   var url = SUPABASE_URL + '/rest/v1/current_work?sub_table=eq.' + encodeURIComponent(subTable) + '&select=*&limit=1';
   fetch(url, {
     headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
@@ -193,9 +193,12 @@ function fetchInfo() {
     document.getElementById('statusDot').className = 'status-dot live';
     document.getElementById('statusText').textContent = '실시간 연결 중';
     if (!rows.length || !rows[0].sku) {
-      showWaiting();
+      // 데이터 없음 — 완료 상태가 아니면 대기 화면
+      if (!isCompleted) showWaiting();
       return;
     }
+    // 새 데이터가 들어왔으면 완료 상태 해제하고 표시
+    isCompleted = false;
     renderInfo(rows[0]);
   })
   .catch(function(e) {
