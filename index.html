@@ -229,12 +229,30 @@
   <!-- ============== 화면 A: 관리자 ============== -->
   <div id="screenAdmin" class="hidden" style="display:none">
     <div class="admin-tabs">
-      <button class="admin-tab active" data-atab="requests" onclick="switchAdminTab('requests')">수정요청 확인</button>
-      <button class="admin-tab" data-atab="qr" onclick="switchAdminTab('qr')">QR코드 생성</button>
-      <button class="admin-tab" data-atab="sync" onclick="switchAdminTab('sync')">DB 동기화</button>
+      <button class="admin-tab active" data-atab="dashboard" onclick="switchAdminTab('dashboard')">대시보드</button>
+      <button class="admin-tab" data-atab="requests" onclick="switchAdminTab('requests')">수정요청</button>
+      <button class="admin-tab" data-atab="qr" onclick="switchAdminTab('qr')">QR</button>
+      <button class="admin-tab" data-atab="sync" onclick="switchAdminTab('sync')">동기화</button>
     </div>
 
-    <div id="adminTabRequests">
+    <div id="adminTabDashboard">
+      <div class="result-card">
+        <div style="font-weight:700; margin-bottom:12px;">오늘 양품화 현황</div>
+        <button onclick="loadDashboard()" style="width:100%; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; margin-bottom:12px;">현황 불러오기</button>
+        <div id="dashboardArea"><div class="collect-empty">위 버튼을 눌러 현황을 불러오세요</div></div>
+      </div>
+      <div id="dashboardLogArea" style="display:none; margin-top:10px;">
+        <div class="result-card">
+          <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+            <div style="font-weight:700;" id="dashLogTitle">로그</div>
+            <button onclick="closeDashLog()" style="background:none; border:none; color:var(--blue); font-size:13px; font-weight:600; cursor:pointer;">닫기</button>
+          </div>
+          <div id="dashLogList"></div>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminTabRequests" class="hidden">
       <div class="admin-filter-row">
         <button class="admin-filter-btn active" data-af="대기" onclick="setAdminFilter('대기')">대기</button>
         <button class="admin-filter-btn" data-af="완료" onclick="setAdminFilter('완료')">완료</button>
@@ -735,14 +753,116 @@ function openAdmin() {
 
 function switchAdminTab(tab) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.atab === tab));
+  document.getElementById('adminTabDashboard').classList.toggle('hidden', tab !== 'dashboard');
   document.getElementById('adminTabRequests').classList.toggle('hidden', tab !== 'requests');
   document.getElementById('adminTabQr').classList.toggle('hidden', tab !== 'qr');
   document.getElementById('adminTabSync').classList.toggle('hidden', tab !== 'sync');
   if (tab === 'requests') loadAdminRequests();
+  if (tab === 'dashboard') { document.getElementById('dashboardLogArea').style.display = 'none'; }
 }
 
 function openQrPage() {
   window.open('https://ghpark-debu.github.io/restocking-projact/qr.html', '_blank');
+}
+
+// ===== 대시보드: 테이블별 양품화 현황 =====
+let dashboardLogs = [];
+
+async function loadDashboard() {
+  const area = document.getElementById('dashboardArea');
+  area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
+  try {
+    // 오늘 날짜 범위
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    const todayIso = today.toISOString();
+    const logs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(todayIso) + '&order=completed_at.desc&limit=5000');
+    dashboardLogs = logs;
+
+    if (!logs.length) {
+      area.innerHTML = '<div class="collect-empty">오늘 완료된 양품화 작업이 없습니다</div>';
+      return;
+    }
+
+    // 테이블별 집계 (sub_table에서 대테이블 추출: '3층-1-3' → '3층-1')
+    const tableMap = {};
+    logs.forEach(function(log) {
+      const parts = (log.sub_table || '').split('-');
+      const tableKey = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
+      if (!tableMap[tableKey]) tableMap[tableKey] = { options: new Set(), pcs: 0, count: 0, logs: [] };
+      tableMap[tableKey].options.add(log.sku);
+      tableMap[tableKey].pcs += (log.pcs || 0);
+      tableMap[tableKey].count += 1;
+      tableMap[tableKey].logs.push(log);
+    });
+
+    // 총합
+    const totalOptions = new Set(logs.map(l => l.sku)).size;
+    const totalPcs = logs.reduce((s, l) => s + (l.pcs || 0), 0);
+    const totalCount = logs.length;
+
+    let html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
+      '<div style="font-size:12px; color:var(--blue); font-weight:600;">오늘 전체</div>' +
+      '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + totalCount + '건</div>' +
+    '</div>';
+
+    const sortedKeys = Object.keys(tableMap).sort();
+    html += '<div style="display:flex; flex-direction:column; gap:6px;">';
+    sortedKeys.forEach(function(key) {
+      const t = tableMap[key];
+      html += '<div class="collect-item" onclick="showDashLog(\'' + key + '\')" style="cursor:pointer;">' +
+        '<div class="ci-left">' +
+          '<div class="ci-sku">' + key + '</div>' +
+          '<div class="ci-sub">' + t.count + '건 완료</div>' +
+        '</div>' +
+        '<div class="ci-right">' +
+          '<div class="ci-loc">' + t.options.size + '종</div>' +
+          '<div class="ci-stock">' + t.pcs + ' pcs</div>' +
+        '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+    area.innerHTML = html;
+  } catch (e) {
+    area.innerHTML = '<div class="collect-empty">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+function showDashLog(tableKey) {
+  const logArea = document.getElementById('dashboardLogArea');
+  const logList = document.getElementById('dashLogList');
+  document.getElementById('dashLogTitle').textContent = tableKey + ' 작업 로그';
+
+  const filtered = dashboardLogs.filter(function(log) {
+    const parts = (log.sub_table || '').split('-');
+    const key = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
+    return key === tableKey;
+  });
+
+  if (!filtered.length) {
+    logList.innerHTML = '<div class="collect-empty">로그 없음</div>';
+  } else {
+    logList.innerHTML = filtered.map(function(log) {
+      var time = '';
+      try { time = new Date(log.completed_at).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); } catch(e) {}
+      return '<div class="log-item">' +
+        '<div style="display:flex; justify-content:space-between;">' +
+          '<span class="log-sku">' + (log.sku || '-') + '</span>' +
+          '<span class="log-time">' + time + ' · ' + (log.sub_table || '') + '</span>' +
+        '</div>' +
+        '<div style="font-size:12px; color:var(--ink-3);">' + (log.option_name || '') + '</div>' +
+        '<div style="font-size:12px; color:var(--ink-mute); margin-top:2px;">' +
+          '로케이션 ' + (log.location_code || '-') + ' · 폴리 ' + (log.poly || '-') + ' · pcs ' + (log.pcs != null ? log.pcs : '-') +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  logArea.style.display = '';
+}
+
+function closeDashLog() {
+  document.getElementById('dashboardLogArea').style.display = 'none';
 }
 
 function setAdminFilter(f) {
