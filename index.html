@@ -202,14 +202,34 @@
   <div class="title" id="headerTitle">양품화</div>
   <div style="display:flex; align-items:center; gap:8px;">
     <button onclick="reloadData()" style="background:none; border:none; color:rgba(255,255,255,0.4); font-size:12px; font-weight:600; cursor:pointer;">새로고침</button>
+    <div id="shiftBadge" style="display:none; background:rgba(255,255,255,0.2); padding:4px 10px; border-radius:6px; font-size:11px; font-weight:600;"></div>
     <div class="table-badge" id="homeBadge" onclick="goHome()">홈</div>
   </div>
 </header>
 
 <div class="container">
 
+  <!-- ============== 화면 S: 조 선택 ============== -->
+  <div id="screenShiftSelect">
+    <div style="text-align:center; margin-top:60px; margin-bottom:30px;">
+      <div style="font-size:20px; font-weight:700;">작업 조 선택</div>
+      <div style="font-size:13px; color:var(--ink-mute); margin-top:6px;">작업을 시작하기 전에 조를 선택해주세요</div>
+    </div>
+    <div class="home-menu">
+      <button class="home-btn" onclick="selectShift('야간')" style="border-left:4px solid var(--ink);">
+        <div class="home-btn-title" style="color:var(--ink);">야간</div>
+      </button>
+      <button class="home-btn" onclick="selectShift('주간A')" style="border-left:4px solid var(--blue);">
+        <div class="home-btn-title" style="color:var(--blue);">주간 A</div>
+      </button>
+      <button class="home-btn" onclick="selectShift('주간B')" style="border-left:4px solid var(--green);">
+        <div class="home-btn-title" style="color:var(--green);">주간 B</div>
+      </button>
+    </div>
+  </div>
+
   <!-- ============== 화면 0: 홈(모드 선택) ============== -->
-  <div id="screenHome">
+  <div id="screenHome" class="hidden" style="display:none">
     <div class="home-menu">
       <button class="home-btn collect" onclick="enterCollectMode()">
                 <div class="home-btn-title">데이터 수집 작업</div>
@@ -729,6 +749,49 @@ function goHome() {
   document.getElementById('headerTitle').textContent = '양품화';
 }
 
+// ===== 조 선택 =====
+let currentShift = null;
+
+function selectShift(shift) {
+  currentShift = shift;
+  sessionStorage.setItem('work_shift', shift);
+  document.getElementById('shiftBadge').textContent = shift;
+  document.getElementById('shiftBadge').style.display = '';
+
+  // auto_table이 저장돼있으면 바로 해당 테이블로
+  const autoTable = sessionStorage.getItem('auto_table');
+  if (autoTable) {
+    sessionStorage.removeItem('auto_table');
+    const parts = autoTable.split('-');
+    if (parts.length >= 2) {
+      enterQualityMode();
+      selectTable(autoTable, parts[0]);
+      return;
+    }
+  }
+
+  // after_shift가 있으면 해당 모드로 진입
+  const afterShift = sessionStorage.getItem('after_shift');
+  if (afterShift) {
+    sessionStorage.removeItem('after_shift');
+    if (afterShift === 'quality') { enterQualityMode(); return; }
+    if (afterShift === 'collect') { enterCollectMode(); return; }
+  }
+
+  showScreen('screenHome');
+}
+
+function loadSavedShift() {
+  const saved = sessionStorage.getItem('work_shift');
+  if (saved) {
+    currentShift = saved;
+    document.getElementById('shiftBadge').textContent = saved;
+    document.getElementById('shiftBadge').style.display = '';
+    return true;
+  }
+  return false;
+}
+
 // ===== 관리자 =====
 const ADMIN_PASSWORD = '0805';
 let adminAllRequests = [];
@@ -810,10 +873,35 @@ async function loadDashboard() {
     const totalPcs = logs.reduce((s, l) => s + (l.expected_qty || 0), 0);
     const totalCount = logs.length;
 
+    // 조별 집계
+    const shiftMap = {};
+    logs.forEach(function(log) {
+      const s = log.work_shift || '미지정';
+      if (!shiftMap[s]) shiftMap[s] = { options: new Set(), pcs: 0, count: 0 };
+      shiftMap[s].options.add(log.sku);
+      shiftMap[s].pcs += (log.expected_qty || 0);
+      shiftMap[s].count += 1;
+    });
+
     let html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
       '<div style="font-size:12px; color:var(--blue); font-weight:600;">' + dateStr + '</div>' +
       '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + totalCount + '건</div>' +
     '</div>';
+
+    // 조별 요약
+    var shiftKeys = Object.keys(shiftMap).sort();
+    if (shiftKeys.length > 0) {
+      html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
+      shiftKeys.forEach(function(s) {
+        var si = shiftMap[s];
+        html += '<div style="flex:1; background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:8px; text-align:center;">' +
+          '<div style="font-size:11px; color:var(--ink-mute); font-weight:600;">' + s + '</div>' +
+          '<div style="font-size:14px; font-weight:800; margin-top:2px;">' + si.count + '건</div>' +
+          '<div style="font-size:11px; color:var(--ink-3);">' + si.pcs + ' pcs</div>' +
+        '</div>';
+      });
+      html += '</div>';
+    }
 
     const sortedKeys = Object.keys(tableMap).sort();
     html += '<div style="display:flex; flex-direction:column; gap:6px;">';
@@ -1028,6 +1116,12 @@ async function adminReloadData() {
 }
 
 function enterQualityMode() {
+  if (!currentShift) {
+    // 조 미선택 → 조 선택 화면으로 (선택 후 양품화 모드 진입)
+    sessionStorage.setItem('after_shift', 'quality');
+    showScreen('screenShiftSelect');
+    return;
+  }
   document.getElementById('headerTitle').textContent = '양품화 작업';
   showScreen('screenTableSelect');
 }
@@ -1056,7 +1150,7 @@ function showTableSelect() {
 }
 
 function showScreen(id) {
-  const screens = ['screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
+  const screens = ['screenShiftSelect', 'screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
   screens.forEach(s => {
     const el = document.getElementById(s);
     if (s === id) {
@@ -1683,7 +1777,8 @@ async function trySendToSubTable(data) {
     tier: data.tier || '',
     location: data.location_code || '',
     categorySmall: data.category_small || '',
-    expectedQty: data.expected_qty || 0
+    expectedQty: data.expected_qty || 0,
+    workShift: currentShift || ''
   };
 
   // 1) 시트 전송 (Apps Script 환경에서만)
@@ -1817,6 +1912,7 @@ async function pushToSubTableSupabase(p) {
     location_code: p.location,
     category_small: p.categorySmall,
     expected_qty: p.expectedQty || 0,
+    work_shift: p.workShift || '',
     scanned_at: new Date().toISOString()
   };
   console.log('소테이블 전송 body:', JSON.stringify(body));
@@ -2486,15 +2582,26 @@ function showToast(msg) {
   const urlParams = new URLSearchParams(window.location.search);
   const autoTable = urlParams.get('table');
   if (autoTable) {
-    // 형식: '3층-1' → floor='3층', tableCode='3층-1'
     const parts = autoTable.split('-');
     if (parts.length >= 2) {
       const floor = parts[0];
-      enterQualityMode();
-      selectTable(autoTable, floor);
+      // 저장된 조가 있으면 바로, 없으면 조 선택 후 테이블로
+      if (loadSavedShift()) {
+        enterQualityMode();
+        selectTable(autoTable, floor);
+      } else {
+        // 조 선택 후 자동 테이블 진입을 위해 저장
+        sessionStorage.setItem('auto_table', autoTable);
+        showScreen('screenShiftSelect');
+      }
     }
   } else {
-    showScreen('screenHome');
+    // 저장된 조가 있으면 홈으로, 없으면 조 선택
+    if (loadSavedShift()) {
+      showScreen('screenHome');
+    } else {
+      showScreen('screenShiftSelect');
+    }
   }
 })();
 </script>
