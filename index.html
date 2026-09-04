@@ -237,7 +237,12 @@
 
     <div id="adminTabDashboard">
       <div class="result-card">
-        <div style="font-weight:700; margin-bottom:12px;">오늘 양품화 현황</div>
+        <div style="font-weight:700; margin-bottom:12px;">양품화 현황</div>
+        <div style="display:flex; gap:6px; margin-bottom:12px; align-items:center;">
+          <button onclick="moveDashDate(-1)" style="padding:8px 12px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); cursor:pointer; font-weight:600;">&lt;</button>
+          <input type="date" id="dashDate" style="flex:1; padding:8px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px; text-align:center;" onchange="loadDashboard()">
+          <button onclick="moveDashDate(1)" style="padding:8px 12px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); cursor:pointer; font-weight:600;">&gt;</button>
+        </div>
         <button onclick="loadDashboard()" style="width:100%; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; margin-bottom:12px;">현황 불러오기</button>
         <div id="dashboardArea"><div class="collect-empty">위 버튼을 눌러 현황을 불러오세요</div></div>
       </div>
@@ -755,15 +760,32 @@ function openQrPage() {
 // ===== 대시보드: 테이블별 양품화 현황 =====
 let dashboardLogs = [];
 
+// 날짜 초기화
+(function initDashDate() {
+  const el = document.getElementById('dashDate');
+  if (el) el.value = new Date().toISOString().split('T')[0];
+})();
+
+function moveDashDate(delta) {
+  const el = document.getElementById('dashDate');
+  const d = new Date(el.value);
+  d.setDate(d.getDate() + delta);
+  el.value = d.toISOString().split('T')[0];
+  loadDashboard();
+}
+
 async function loadDashboard() {
   const area = document.getElementById('dashboardArea');
   area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
   try {
-    // 오늘 날짜 범위
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const todayIso = today.toISOString();
-    const logs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(todayIso) + '&order=completed_at.desc&limit=5000');
+    const dateStr = document.getElementById('dashDate').value;
+    const startDate = new Date(dateStr);
+    startDate.setHours(0, 0, 0, 0);
+    const endDate = new Date(dateStr);
+    endDate.setDate(endDate.getDate() + 1);
+    endDate.setHours(0, 0, 0, 0);
+
+    const logs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(startDate.toISOString()) + '&completed_at=lt.' + encodeURIComponent(endDate.toISOString()) + '&order=completed_at.desc&limit=5000');
     dashboardLogs = logs;
 
     if (!logs.length) {
@@ -789,7 +811,7 @@ async function loadDashboard() {
     const totalCount = logs.length;
 
     let html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
-      '<div style="font-size:12px; color:var(--blue); font-weight:600;">오늘 전체</div>' +
+      '<div style="font-size:12px; color:var(--blue); font-weight:600;">' + dateStr + '</div>' +
       '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + totalCount + '건</div>' +
     '</div>';
 
@@ -1684,10 +1706,16 @@ function showLastScanResult(data) {
   const el = document.getElementById('lastScanInfo');
   const detail = document.getElementById('lastScanDetail');
   if (!el || !detail) return;
+  lastScanData = data; // 폴리 입력용 백업
 
   const floor = floorFromLocation(data.location_code);
   const bagColor = floor ? bagColorOfFloor(floor) : '-';
   const tierText = data.tier ? data.tier + '단' : '-';
+
+  // 폴리 표시: 없으면 클릭 가능 버튼
+  const polyDisplay = data.poly_size
+    ? '<span>폴리 <b>' + data.poly_size + '</b></span>'
+    : '<span onclick="openPolyPopup()" style="cursor:pointer; color:var(--blue); font-weight:600; border:1px dashed var(--blue); padding:1px 8px; border-radius:4px;">폴리 입력</span>';
 
   detail.innerHTML =
     '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">' +
@@ -1701,13 +1729,77 @@ function showLastScanResult(data) {
         '<div style="color:var(--ink-mute);">전송</div>' +
       '</div>' +
     '</div>' +
-    '<div style="display:flex; gap:12px; font-size:12px; color:var(--ink-2);">' +
+    '<div style="display:flex; gap:12px; font-size:12px; color:var(--ink-2); align-items:center;">' +
       '<span>로케이션 <b>' + (data.location_code || '-') + '</b></span>' +
-      '<span>폴리 <b>' + (data.poly_size || '-') + '</b></span>' +
+      polyDisplay +
       '<span>pcs <b>' + (data.pcs_for_current_tier != null ? data.pcs_for_current_tier : '-') + '</b></span>' +
       '<span>' + bagColor + ' <b>' + tierText + '</b></span>' +
     '</div>';
   el.style.display = '';
+}
+
+let lastScanData = null;
+
+function openPolyPopup() {
+  // 팝업 생성
+  let popup = document.getElementById('polyPopup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'polyPopup';
+    popup.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200;';
+    popup.innerHTML =
+      '<div style="background:var(--card); border-radius:var(--r-lg); padding:20px; width:300px; max-width:90%;">' +
+        '<div style="font-weight:700; font-size:15px; margin-bottom:14px; text-align:center;">폴리 규격 선택</div>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">' +
+          '<button onclick="selectPolyQuick(\'1호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">1호</button>' +
+          '<button onclick="selectPolyQuick(\'2호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">2호</button>' +
+          '<button onclick="selectPolyQuick(\'3호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">3호</button>' +
+          '<button onclick="selectPolyQuick(\'4호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">4호</button>' +
+        '</div>' +
+        '<button onclick="closePolyPopup()" style="width:100%; padding:12px; margin-top:10px; background:none; border:1px solid var(--ring); border-radius:var(--r); color:var(--ink-3); font-size:14px; font-weight:600; cursor:pointer;">취소</button>' +
+      '</div>';
+    document.body.appendChild(popup);
+  }
+  popup.style.display = 'flex';
+}
+
+function closePolyPopup() {
+  const popup = document.getElementById('polyPopup');
+  if (popup) popup.style.display = 'none';
+}
+
+async function selectPolyQuick(polySize) {
+  closePolyPopup();
+  if (!lastScanData || !lastScanData.sku) return;
+
+  try {
+    // Supabase sku_poly에 저장
+    await sbPost('sku_poly?on_conflict=sku', {
+      sku: lastScanData.sku,
+      category_small: lastScanData.category_small || '',
+      poly_size: polySize,
+      updated_at: new Date().toISOString()
+    });
+
+    // 로컬 인덱스 갱신
+    if (sheetIndex && sheetIndex.polyBySku) {
+      sheetIndex.polyBySku[lastScanData.sku] = polySize;
+    }
+
+    // 화면 갱신
+    lastScanData.poly_size = polySize;
+    showLastScanResult(lastScanData);
+
+    // 소테이블에도 갱신된 폴리 전송
+    if (currentSubTable) {
+      trySendToSubTable(lastScanData);
+    }
+
+    showToast(polySize + ' 저장 완료');
+  } catch (e) {
+    console.error('폴리 저장 실패:', e);
+    showToast('저장 실패: ' + e.message);
+  }
 }
 
 // Supabase current_work 테이블에 직접 upsert
