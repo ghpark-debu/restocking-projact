@@ -148,6 +148,7 @@ var PHOTO_SEARCH_BASE_URL = 'https://admin.a-bly.com/mobile/goods';
 var params = new URLSearchParams(window.location.search);
 var subTable = params.get('t');
 var lastScanTime = '';
+var tableShift = '';
 var currentData = null;
 var prevData = null; // 완료 취소용 백업
 var isCompleted = false;
@@ -258,6 +259,10 @@ function renderInfo(data) {
   document.getElementById('tLoc').textContent = data.location_code || '-';
   document.getElementById('tTier').textContent = data.tier ? data.tier + '단' : '-';
 
+  // 조 정보 표시
+  tableShift = data.work_shift || '';
+  document.getElementById('subBadge').textContent = subTable + (tableShift ? ' · ' + tableShift : '');
+
   var timeStr = '-';
   if (scanTime) {
     try { timeStr = new Date(scanTime).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit', second:'2-digit' }); } catch(e) { timeStr = scanTime; }
@@ -303,7 +308,8 @@ function completeWork() {
       tier: currentData.tier != null ? currentData.tier : null,
       location_code: currentData.location_code || '',
       category_small: currentData.category_small || '',
-      expected_qty: currentData.expected_qty || 0
+      expected_qty: currentData.expected_qty || 0,
+      work_shift: tableShift || currentData.work_shift || ''
     })
   })
   .then(function(resp) {
