@@ -161,8 +161,8 @@
   .edit-req-btn { background: var(--blue-soft); border: none; color: var(--blue); font-size: 12px; font-weight: 600; padding: 7px 12px; border-radius: 6px; cursor: pointer; }
 
   /* --- Sub-table Slots --- */
-  .sub-table-slots { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
-  .sub-slot { padding: 10px 4px; background: var(--card); border: 1px solid var(--ring); border-radius: var(--r); text-align: center; font-size: 14px; font-weight: 600; color: var(--ink-3); cursor: pointer; }
+  .sub-table-slots { margin-bottom: 12px; }
+  .sub-slot { padding: 18px 4px; background: var(--card); border: 1px solid var(--ring); border-radius: var(--r); text-align: center; font-size: 18px; font-weight: 700; color: var(--ink-3); cursor: pointer; }
   .sub-slot.active { background: var(--ink); color: #fff; border-color: var(--ink); }
   .sub-slot:active { background: var(--surface); }
 
@@ -210,7 +210,7 @@
 <div class="container">
 
   <!-- ============== 화면 S: 조 선택 ============== -->
-  <div id="screenShiftSelect">
+  <div id="screenShiftSelect" class="hidden" style="display:none">
     <div style="text-align:center; margin-top:60px; margin-bottom:30px;">
       <div style="font-size:20px; font-weight:700;">작업 조 선택</div>
       <div style="font-size:13px; color:var(--ink-mute); margin-top:6px;">작업을 시작하기 전에 조를 선택해주세요</div>
@@ -229,7 +229,7 @@
   </div>
 
   <!-- ============== 화면 0: 홈(모드 선택) ============== -->
-  <div id="screenHome" class="hidden" style="display:none">
+  <div id="screenHome">
     <div class="home-menu">
       <button class="home-btn collect" onclick="enterCollectMode()">
                 <div class="home-btn-title">데이터 수집 작업</div>
@@ -431,7 +431,7 @@
 
   <!-- ============== 화면 2: 스캔 대기 ============== -->
   <div id="screenScan" class="hidden" style="display:none">
-    <button class="btn-back" onclick="showTableSelect()">테이블 다시 선택</button>
+    <button class="btn-back" onclick="showTableSelect()" style="font-size:20px; padding:4px 0;">&#8592;</button>
     <div class="today-stat">
       <span id="currentTableLabel">-</span>
       <span>오늘 <b id="todayPcs">0</b> pcs · <b id="todayCount">0</b>건</span>
@@ -694,53 +694,140 @@ function bagColorFromLocation(loc) {
   return bagColorOfFloor(floorFromLocation(loc));
 }
 
-let currentSubTable = null; // 현재 선택된 소테이블 (예: '3층-1-3')
+let currentSubTable = null;
+let multiSubTables = [];
+let isMultiMode = false;
 
 function selectTable(tableCode, floor) {
+  // 조 미선택이면 조 선택 팝업 먼저
+  if (!currentShift) {
+    pendingTable = { tableCode, floor };
+    showShiftPopup();
+    return;
+  }
+  doSelectTable(tableCode, floor);
+}
+
+let pendingTable = null;
+
+function doSelectTable(tableCode, floor) {
   currentTable = { table_code: tableCode, floor: floor, bag_color: bagColorOfFloor(floor) };
   currentSubTable = null;
+  multiSubTables = [];
+  isMultiMode = false;
   document.getElementById('currentTableLabel').textContent = tableCode;
   showScreen('screenScan');
   loadTodayStat();
 
-  // 소테이블 슬롯 생성 (8개)
   const slotsDiv = document.getElementById('subTableSlots');
   slotsDiv.innerHTML = '';
+  const grid = document.createElement('div');
+  grid.id = 'subSlotGrid';
+  grid.style.cssText = 'display:grid; grid-template-columns:repeat(4,1fr); gap:8px;';
   for (let i = 1; i <= 8; i++) {
     const subId = floor + '-' + tableCode.replace(floor + '-', '') + '-' + i;
     const btn = document.createElement('div');
     btn.className = 'sub-slot';
     btn.textContent = i;
     btn.dataset.sub = subId;
-    btn.onclick = function() { selectSubTable(subId); };
-    slotsDiv.appendChild(btn);
+    btn.onclick = function() { toggleSubTable(subId, this); };
+    grid.appendChild(btn);
   }
+  slotsDiv.appendChild(grid);
 
-  // 바코드 입력은 소테이블 선택 후 활성화
   const input = document.getElementById('barcodeInput');
   input.disabled = true;
-  input.placeholder = '소테이블을 먼저 선택하세요';
+  input.placeholder = '소테이블을 선택하세요';
   document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
 
-  // 스캔 데이터 미리 로딩
   if (SHEET_MODE && !sheetIndex) {
-    preloadSheetIndex().catch((e) => {
-      console.error('데이터 로딩 실패:', e);
-      showToast('데이터 로딩 실패');
-    });
+    preloadSheetIndex().catch((e) => { console.error('데이터 로딩 실패:', e); });
+  }
+}
+
+function toggleSubTable(subId, el) {
+  const idx = multiSubTables.indexOf(subId);
+  if (idx >= 0) {
+    multiSubTables.splice(idx, 1);
+    el.classList.remove('active');
+  } else {
+    multiSubTables.push(subId);
+    el.classList.add('active');
+  }
+  multiSubTables.sort();
+  isMultiMode = multiSubTables.length > 1;
+  currentSubTable = multiSubTables.length ? multiSubTables[0] : null;
+
+  const input = document.getElementById('barcodeInput');
+  if (multiSubTables.length > 0) {
+    input.disabled = false;
+    input.placeholder = '바코드를 스캔하세요';
+    document.getElementById('scanHint').textContent = multiSubTables.length === 1
+      ? multiSubTables[0] + ' 스캔 중'
+      : multiSubTables.length + '개 소테이블 선택됨';
+    focusBarcodeInput();
+  } else {
+    input.disabled = true;
+    input.placeholder = '소테이블을 선택하세요';
+    document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
   }
 }
 
 function selectSubTable(subId) {
-  currentSubTable = subId;
-  document.querySelectorAll('.sub-slot').forEach(s => {
-    s.classList.toggle('active', s.dataset.sub === subId);
-  });
-  const input = document.getElementById('barcodeInput');
-  input.disabled = false;
-  input.placeholder = '바코드를 스캔하세요';
-  document.getElementById('scanHint').textContent = subId + ' 소테이블로 스캔 중';
-  focusBarcodeInput();
+  const el = document.querySelector('#subSlotGrid .sub-slot[data-sub="' + subId + '"]');
+  if (el) toggleSubTable(subId, el);
+}
+
+// 조 선택 팝업 (소테이블 선택 후)
+function showShiftPopup() {
+  let popup = document.getElementById('shiftPopup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'shiftPopup';
+    popup.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200;';
+    popup.innerHTML =
+      '<div style="background:var(--card); border-radius:var(--r-lg); padding:20px; width:300px; max-width:90%;">' +
+        '<div style="font-weight:700; font-size:16px; margin-bottom:14px; text-align:center;">작업 조 선택</div>' +
+        '<div style="display:flex; flex-direction:column; gap:8px;">' +
+          '<button onclick="confirmShift(\x27야간\x27)" style="padding:16px; border:1px solid var(--ring); border-left:4px solid var(--ink); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer; text-align:left;">야간</button>' +
+          '<button onclick="confirmShift(\x27주간A\x27)" style="padding:16px; border:1px solid var(--ring); border-left:4px solid var(--blue); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer; text-align:left; color:var(--blue);">주간 A</button>' +
+          '<button onclick="confirmShift(\x27주간B\x27)" style="padding:16px; border:1px solid var(--ring); border-left:4px solid var(--green); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer; text-align:left; color:var(--green);">주간 B</button>' +
+        '</div>' +
+      '</div>';
+    document.body.appendChild(popup);
+  }
+  popup.style.display = 'flex';
+}
+
+function confirmShift(shift) {
+  currentShift = shift;
+  sessionStorage.setItem('work_shift', shift);
+  document.getElementById('shiftBadge').textContent = shift;
+  document.getElementById('shiftBadge').style.display = '';
+  const popup = document.getElementById('shiftPopup');
+  if (popup) popup.style.display = 'none';
+
+  // 테이블 선택 대기 중이었으면 진입
+  if (pendingTable) {
+    const t = pendingTable;
+    pendingTable = null;
+    doSelectTable(t.tableCode, t.floor);
+    return;
+  }
+
+  // auto_table이 저장돼있으면 바로 해당 테이블로
+  const autoTable = sessionStorage.getItem('auto_table');
+  if (autoTable) {
+    sessionStorage.removeItem('auto_table');
+    const parts = autoTable.split('-');
+    if (parts.length >= 2) {
+      enterQualityMode();
+      doSelectTable(autoTable, parts[0]);
+      return;
+    }
+  }
+
+  showScreen('screenHome');
 }
 
 // ===== 홈 / 모드 전환 =====
@@ -753,32 +840,7 @@ function goHome() {
 let currentShift = null;
 
 function selectShift(shift) {
-  currentShift = shift;
-  sessionStorage.setItem('work_shift', shift);
-  document.getElementById('shiftBadge').textContent = shift;
-  document.getElementById('shiftBadge').style.display = '';
-
-  // auto_table이 저장돼있으면 바로 해당 테이블로
-  const autoTable = sessionStorage.getItem('auto_table');
-  if (autoTable) {
-    sessionStorage.removeItem('auto_table');
-    const parts = autoTable.split('-');
-    if (parts.length >= 2) {
-      enterQualityMode();
-      selectTable(autoTable, parts[0]);
-      return;
-    }
-  }
-
-  // after_shift가 있으면 해당 모드로 진입
-  const afterShift = sessionStorage.getItem('after_shift');
-  if (afterShift) {
-    sessionStorage.removeItem('after_shift');
-    if (afterShift === 'quality') { enterQualityMode(); return; }
-    if (afterShift === 'collect') { enterCollectMode(); return; }
-  }
-
-  showScreen('screenHome');
+  confirmShift(shift);
 }
 
 function loadSavedShift() {
@@ -1116,12 +1178,6 @@ async function adminReloadData() {
 }
 
 function enterQualityMode() {
-  if (!currentShift) {
-    // 조 미선택 → 조 선택 화면으로 (선택 후 양품화 모드 진입)
-    sessionStorage.setItem('after_shift', 'quality');
-    showScreen('screenShiftSelect');
-    return;
-  }
   document.getElementById('headerTitle').textContent = '양품화 작업';
   showScreen('screenTableSelect');
 }
@@ -1743,54 +1799,75 @@ function pushToSubTable(payload) {
   });
 }
 
-// 소테이블에 스캔 정보 전송 — 시트 + Supabase 동시 (GitHub Pages 화면은 Supabase에서 읽음)
+// 소테이블에 스캔 정보 전송 — 단일/다중 모드 지원
 async function trySendToSubTable(data) {
-  if (!currentSubTable) return;
+  const allTargets = isMultiMode && multiSubTables.length > 1 ? [...multiSubTables] : (currentSubTable ? [currentSubTable] : []);
+  if (!allTargets.length) return;
 
-  // 소테이블에 미완료 작업이 있는지 먼저 확인
-  try {
-    const checkUrl = SUPABASE_URL + '/rest/v1/current_work?sub_table=eq.' + encodeURIComponent(currentSubTable) + '&select=sku,scanned_at&limit=1';
-    const checkResp = await fetch(checkUrl, {
-      headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
-    });
-    if (checkResp.ok) {
-      const rows = await checkResp.json();
-      if (rows.length > 0 && rows[0].sku && rows[0].sku !== '' && rows[0].sku !== data.sku) {
-        // 다른 SKU의 미완료 작업이 있음 — 차단
-        alert(currentSubTable + ' 소테이블에 아직 완료되지 않은 작업이 있습니다.\n\n기존: ' + rows[0].sku + '\n\n테이블에서 양품화 완료를 먼저 눌러주세요.');
-        return;
+  // 미완료 체크 — 다른 SKU가 있는 소테이블은 건너뛰기
+  const available = [];
+  const skipped = [];
+  for (let i = 0; i < allTargets.length; i++) {
+    try {
+      const checkUrl = SUPABASE_URL + '/rest/v1/current_work?sub_table=eq.' + encodeURIComponent(allTargets[i]) + '&select=sku&limit=1';
+      const checkResp = await fetch(checkUrl, {
+        headers: { 'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY }
+      });
+      if (checkResp.ok) {
+        const rows = await checkResp.json();
+        if (rows.length > 0 && rows[0].sku && rows[0].sku !== '' && rows[0].sku !== data.sku) {
+          skipped.push(allTargets[i]);
+          continue;
+        }
       }
-    }
-  } catch (e) {
-    console.error('소테이블 상태 확인 실패:', e);
-    // 확인 실패해도 전송은 진행 (네트워크 오류 시 차단하면 작업 불가)
+    } catch (e) { console.error('소테이블 상태 확인 실패:', e); }
+    available.push(allTargets[i]);
   }
 
-  const payload = {
-    subTable: currentSubTable,
-    sku: data.sku || '',
-    optionName: data.option_name || '',
-    productName: data.product_name || '',
-    poly: data.poly_size || '',
-    pcs: data.pcs_for_current_tier != null ? data.pcs_for_current_tier : '',
-    bagColor: bagColorFromLocation(data.location_code),
-    tier: data.tier || '',
-    location: data.location_code || '',
-    categorySmall: data.category_small || '',
-    expectedQty: data.expected_qty || 0,
-    workShift: currentShift || ''
-  };
-
-  // 1) 시트 전송 (Apps Script 환경에서만)
-  if (SHEET_MODE) {
-    pushToSubTable(payload).catch(e => console.error('시트 전송 실패:', e));
+  // 단일 모드에서 미완료면 차단
+  if (!isMultiMode && skipped.length > 0) {
+    alert(skipped[0] + ' 소테이블에 아직 완료되지 않은 작업이 있습니다.\n\n테이블에서 양품화 완료를 먼저 눌러주세요.');
+    return;
   }
 
-  // 2) Supabase 전송 (GitHub Pages 소테이블 화면용)
-  pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
+  if (!available.length) {
+    alert('선택한 모든 소테이블에 미완료 작업이 있습니다.\n\n각 테이블에서 양품화 완료를 먼저 눌러주세요.');
+    return;
+  }
 
-  // 3) 마지막 전송 정보 표시
+  // 전송 가능한 테이블 수 기준으로 수량 배분
+  const totalQty = data.expected_qty || 0;
+  const count = available.length;
+  const baseQty = count > 0 ? Math.floor(totalQty / count) : totalQty;
+  const remainder = count > 0 ? totalQty % count : 0;
+
+  // 각 소테이블에 전송
+  for (let i = 0; i < available.length; i++) {
+    const assignedQty = baseQty + (i < remainder ? 1 : 0);
+    const payload = {
+      subTable: available[i],
+      sku: data.sku || '',
+      optionName: data.option_name || '',
+      productName: data.product_name || '',
+      poly: data.poly_size || '',
+      pcs: data.pcs_for_current_tier != null ? data.pcs_for_current_tier : '',
+      bagColor: bagColorFromLocation(data.location_code),
+      tier: data.tier || '',
+      location: data.location_code || '',
+      categorySmall: data.category_small || '',
+      expectedQty: assignedQty,
+      workShift: currentShift || ''
+    };
+    pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
+  }
+
+  // 결과 표시
   showLastScanInfo(data);
+  if (skipped.length > 0) {
+    showToast(available.length + '개 전송 / ' + skipped.length + '개 건너뜀 (미완료)');
+  } else if (count > 1) {
+    showToast(count + '개 테이블에 전송 (각 ' + baseQty + (remainder > 0 ? '~' + (baseQty + 1) : '') + '개)');
+  }
 }
 
 function showLastScanInfo(data) {
@@ -2069,8 +2146,17 @@ function lookupLocal(optionCode) {
         sku: stockItem.sku,
         option_name: stockItem.option_name || '',
         product_name: '',
-        location_code: stockItem.location_code || ''
+        location_code: stockItem.location_code || '',
+        expected_qty: 0
       };
+    }
+  }
+
+  // 3차: 전표DB에 있지만 로케이션이 비어있으면 재고DB에서 로케이션 보충
+  if (invoice && !invoice.location_code && sheetIndex.stockByOption) {
+    const stockItem = sheetIndex.stockByOption[optionCode];
+    if (stockItem && stockItem.location_code) {
+      invoice.location_code = stockItem.location_code;
     }
   }
 
@@ -2585,23 +2671,20 @@ function showToast(msg) {
     const parts = autoTable.split('-');
     if (parts.length >= 2) {
       const floor = parts[0];
-      // 저장된 조가 있으면 바로, 없으면 조 선택 후 테이블로
-      if (loadSavedShift()) {
+      loadSavedShift();
+      if (currentShift) {
         enterQualityMode();
-        selectTable(autoTable, floor);
+        doSelectTable(autoTable, floor);
       } else {
-        // 조 선택 후 자동 테이블 진입을 위해 저장
-        sessionStorage.setItem('auto_table', autoTable);
-        showScreen('screenShiftSelect');
+        // 조 미선택 → 조 팝업 후 테이블 진입
+        pendingTable = { tableCode: autoTable, floor: floor };
+        enterQualityMode();
+        showShiftPopup();
       }
     }
   } else {
-    // 저장된 조가 있으면 홈으로, 없으면 조 선택
-    if (loadSavedShift()) {
-      showScreen('screenHome');
-    } else {
-      showScreen('screenShiftSelect');
-    }
+    loadSavedShift();
+    showScreen('screenHome');
   }
 })();
 </script>
