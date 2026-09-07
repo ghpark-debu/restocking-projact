@@ -2257,8 +2257,20 @@ async function handleBarcodeScan(rawBarcode) {
     // 기존값이든 미등록이든 — 스캔 화면에 머물면서 정보 표시 + 소테이블 전송
     showLastScanResult(data);
     trySendToSubTable(data);
+    resetSubTableSelection();
     focusBarcodeInput();
   }
+}
+
+function resetSubTableSelection() {
+  currentSubTable = null;
+  multiSubTables = [];
+  isMultiMode = false;
+  document.querySelectorAll('#subSlotGrid .sub-slot').forEach(function(s) { s.classList.remove('active'); });
+  const input = document.getElementById('barcodeInput');
+  input.disabled = true;
+  input.placeholder = '소테이블을 선택하세요';
+  document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
 }
 
 function cancelToScan() {
