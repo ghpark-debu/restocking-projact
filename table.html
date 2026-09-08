@@ -103,7 +103,7 @@
             <div class="bag-color-sub" id="tBagSub">-</div>
           </div>
           <div class="info-grid">
-            <div class="info-box">
+            <div class="info-box" id="tPolyBox" onclick="onPolyClick()" style="cursor:pointer;">
               <div class="info-label">폴리 규격</div>
               <div class="info-value" id="tPoly">-</div>
             </div>
@@ -253,7 +253,15 @@ function renderInfo(data) {
   document.getElementById('tBagName').textContent = bagColor + ' 대봉';
   document.getElementById('tBagSub').textContent = data.tier ? data.tier + '단' : '-';
 
-  document.getElementById('tPoly').textContent = data.poly || '-';
+  document.getElementById('tPoly').textContent = data.poly || '입력';
+  var polyBox = document.getElementById('tPolyBox');
+  if (!data.poly) {
+    polyBox.style.border = '1.5px dashed var(--blue)';
+    document.getElementById('tPoly').style.color = 'var(--blue)';
+  } else {
+    polyBox.style.border = '';
+    document.getElementById('tPoly').style.color = '';
+  }
   document.getElementById('tPcs').textContent = data.pcs != null ? data.pcs : '-';
   document.getElementById('tPcsLabel').textContent = data.tier ? '대봉당 pcs (' + data.tier + '단)' : '대봉당 pcs';
   document.getElementById('tLoc').textContent = data.location_code || '-';
@@ -387,6 +395,74 @@ function undoComplete() {
     showWaiting();
     fetchInfo();
   }
+}
+
+// 폴리 입력 (소테이블에서)
+function onPolyClick() {
+  if (!currentData || !currentData.sku) return;
+  var popup = document.getElementById('polyPopup');
+  if (!popup) {
+    popup = document.createElement('div');
+    popup.id = 'polyPopup';
+    popup.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200;';
+    popup.innerHTML =
+      '<div style="background:var(--card); border-radius:var(--r-lg); padding:20px; width:280px; max-width:90%;">' +
+        '<div style="font-weight:700; font-size:15px; margin-bottom:14px; text-align:center;">폴리 규격 선택</div>' +
+        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">' +
+          '<button onclick="savePolyFromTable(\'1호\')" style="padding:18px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:18px; font-weight:700; cursor:pointer;">1호</button>' +
+          '<button onclick="savePolyFromTable(\'2호\')" style="padding:18px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:18px; font-weight:700; cursor:pointer;">2호</button>' +
+          '<button onclick="savePolyFromTable(\'3호\')" style="padding:18px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:18px; font-weight:700; cursor:pointer;">3호</button>' +
+          '<button onclick="savePolyFromTable(\'4호\')" style="padding:18px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:18px; font-weight:700; cursor:pointer;">4호</button>' +
+        '</div>' +
+        '<button onclick="closePolyPopup()" style="width:100%; padding:10px; margin-top:8px; background:none; border:1px solid var(--ring); border-radius:var(--r); color:var(--ink-3); font-size:13px; font-weight:600; cursor:pointer;">취소</button>' +
+      '</div>';
+    document.body.appendChild(popup);
+  }
+  popup.style.display = 'flex';
+}
+
+function closePolyPopup() {
+  var popup = document.getElementById('polyPopup');
+  if (popup) popup.style.display = 'none';
+}
+
+function savePolyFromTable(polySize) {
+  closePolyPopup();
+  if (!currentData || !currentData.sku) return;
+
+  // Supabase sku_poly에 저장
+  fetch(SUPABASE_URL + '/rest/v1/sku_poly?on_conflict=sku', {
+    method: 'POST',
+    headers: {
+      'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+      'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+    },
+    body: JSON.stringify({
+      sku: currentData.sku,
+      category_small: currentData.category_small || '',
+      poly_size: polySize,
+      updated_at: new Date().toISOString()
+    })
+  })
+  .then(function(resp) {
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+    // 화면 갱신
+    currentData.poly = polySize;
+    document.getElementById('tPoly').textContent = polySize;
+    document.getElementById('tPoly').style.color = '';
+    document.getElementById('tPolyBox').style.border = '';
+
+    // current_work에도 폴리 업데이트
+    fetch(SUPABASE_URL + '/rest/v1/current_work?on_conflict=sub_table', {
+      method: 'POST',
+      headers: {
+        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
+        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      },
+      body: JSON.stringify({ sub_table: subTable, poly: polySize, scanned_at: currentData.scanned_at })
+    }).catch(function(e) { console.error('current_work 폴리 업데이트 실패:', e); });
+  })
+  .catch(function(e) { console.error('폴리 저장 실패:', e); alert('저장 실패: ' + e.message); });
 }
 
 // 로그 렌더링
