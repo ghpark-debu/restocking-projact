@@ -925,14 +925,14 @@ async function loadDashboard() {
       const tableKey = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
       if (!tableMap[tableKey]) tableMap[tableKey] = { options: new Set(), pcs: 0, count: 0, logs: [] };
       tableMap[tableKey].options.add(log.sku);
-      tableMap[tableKey].pcs += (log.expected_qty || 0);
+      tableMap[tableKey].pcs += (log.actual_qty || log.expected_qty || 0);
       tableMap[tableKey].count += 1;
       tableMap[tableKey].logs.push(log);
     });
 
     // 총합
     const totalOptions = new Set(logs.map(l => l.sku)).size;
-    const totalPcs = logs.reduce((s, l) => s + (l.expected_qty || 0), 0);
+    const totalPcs = logs.reduce((s, l) => s + (l.actual_qty || l.expected_qty || 0), 0);
     const totalCount = logs.length;
 
     // 조별 집계
@@ -941,7 +941,7 @@ async function loadDashboard() {
       const s = log.work_shift || '미지정';
       if (!shiftMap[s]) shiftMap[s] = { options: new Set(), pcs: 0, count: 0 };
       shiftMap[s].options.add(log.sku);
-      shiftMap[s].pcs += (log.expected_qty || 0);
+      shiftMap[s].pcs += (log.actual_qty || log.expected_qty || 0);
       shiftMap[s].count += 1;
     });
 
@@ -1011,7 +1011,7 @@ function showDashLog(tableKey) {
         '</div>' +
         '<div style="font-size:12px; color:var(--ink-3);">' + (log.option_name || '') + '</div>' +
         '<div style="font-size:12px; color:var(--ink-mute); margin-top:2px;">' +
-          '로케이션 ' + (log.location_code || '-') + ' · 입고수량 ' + (log.expected_qty || 0) + ' · 폴리 ' + (log.poly || '-') +
+          '로케이션 ' + (log.location_code || '-') + ' · 실입고 ' + (log.actual_qty || 0) + ' · 폴리 ' + (log.poly || '-') +
         '</div>' +
       '</div>';
     }).join('');
@@ -1856,6 +1856,7 @@ async function trySendToSubTable(data) {
       location: data.location_code || '',
       categorySmall: data.category_small || '',
       expectedQty: assignedQty,
+      actualQty: data.actual_qty || 0,
       workShift: currentShift || ''
     };
     pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
@@ -1989,6 +1990,7 @@ async function pushToSubTableSupabase(p) {
     location_code: p.location,
     category_small: p.categorySmall,
     expected_qty: p.expectedQty || 0,
+    actual_qty: p.actualQty || 0,
     work_shift: p.workShift || '',
     scanned_at: new Date().toISOString()
   };
@@ -2068,13 +2070,14 @@ function preloadSheetIndex() {
 }
 
 async function loadSupabaseIndex() {
-  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows] = await Promise.all([
+  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows, completedRows] = await Promise.all([
     sbFetch('invoice?select=option_code,sku,option_name,product_name,location_code,expected_qty&limit=50000'),
     sbFetch('sku_poly?select=sku,category_small,poly_size&limit=50000'),
     sbFetch('sku_bag?select=sku,category_small,pcs_3tier,pcs_4tier&limit=50000'),
     sbFetch('defect_hint?select=category,hint_text,severity&limit=5000'),
     sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
-    sbFetch('category?select=sku,category_large,category_small&limit=50000')
+    sbFetch('category?select=sku,category_large,category_small&limit=50000'),
+    sbFetch('completed_invoice?select=option_code,actual_qty&limit=50000')
   ]);
   const invoiceByOption = {};
   invoiceRows.forEach(r => { if (r.option_code) invoiceByOption[r.option_code] = { sku: r.sku||'', option_name: r.option_name||'', product_name: r.product_name||'', location_code: r.location_code||'', expected_qty: r.expected_qty||0 }; });
@@ -2086,15 +2089,19 @@ async function loadSupabaseIndex() {
   defectRows.forEach(r => { if (r.category) defectByCat[r.category] = { hint_text: r.hint_text||'', severity: r.severity||1 }; });
   const stockByOption = {};
   stockRows.forEach(r => { if (r.option_code) stockByOption[r.option_code] = { stock: r.stock_qty||0, location_code: r.location_code||'', sku: r.sku||'', option_name: r.option_name||'' }; });
+  const completedByOption = {};
+  completedRows.forEach(r => { if (r.option_code) completedByOption[r.option_code] = r.actual_qty || 0; });
+
   const categoryBySku = {};
   catRows.forEach(r => { if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large||'', category_small: r.category_small||'' }; });
-  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku };
+  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku, completedByOption };
   console.log('Supabase 인덱스 로드 완료:', 
     '전표', Object.keys(invoiceByOption).length,
     '/ 폴리', Object.keys(polyBySku).length,
     '/ 대봉', Object.keys(bagBySku).length,
     '/ 재고', Object.keys(stockByOption).length,
-    '/ 카테고리', Object.keys(categoryBySku).length);
+    '/ 카테고리', Object.keys(categoryBySku).length,
+    '/ 완료전표', Object.keys(completedByOption).length);
   return sheetIndex;
 }
 
@@ -2186,7 +2193,8 @@ function lookupLocal(optionCode) {
     pcs_for_current_tier: pcsCur, confirm_count: 1, data_source: 'sheet',
     defect_hint_text: defect ? defect.hint_text : null,
     defect_hint_severity: defect ? defect.severity : null,
-    expected_qty: invoice.expected_qty || 0
+    expected_qty: invoice.expected_qty || 0,
+    actual_qty: (sheetIndex.completedByOption && sheetIndex.completedByOption[optionCode]) || 0
   };
 }
 
