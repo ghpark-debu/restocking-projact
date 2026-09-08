@@ -1885,10 +1885,8 @@ function showLastScanResult(data) {
   const bagColor = floor ? bagColorOfFloor(floor) : '-';
   const tierText = data.tier ? data.tier + '단' : '-';
 
-  // 폴리 표시: 없으면 클릭 가능 버튼
-  const polyDisplay = data.poly_size
-    ? '<span>폴리 <b>' + data.poly_size + '</b></span>'
-    : '<span onclick="openPolyPopup()" style="cursor:pointer; color:var(--blue); font-weight:600; border:1px dashed var(--blue); padding:1px 8px; border-radius:4px;">폴리 입력</span>';
+  // 폴리 표시: 없으면 - (입력은 소테이블에서)
+  const polyDisplay = '<span>폴리 <b>' + (data.poly_size || '-') + '</b></span>';
 
   detail.innerHTML =
     '<div style="display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:6px;">' +
@@ -1909,70 +1907,6 @@ function showLastScanResult(data) {
       '<span>' + bagColor + ' <b>' + tierText + '</b></span>' +
     '</div>';
   el.style.display = '';
-}
-
-let lastScanData = null;
-
-function openPolyPopup() {
-  // 팝업 생성
-  let popup = document.getElementById('polyPopup');
-  if (!popup) {
-    popup = document.createElement('div');
-    popup.id = 'polyPopup';
-    popup.style.cssText = 'position:fixed; top:0; left:0; right:0; bottom:0; background:rgba(0,0,0,0.4); display:flex; align-items:center; justify-content:center; z-index:200;';
-    popup.innerHTML =
-      '<div style="background:var(--card); border-radius:var(--r-lg); padding:20px; width:300px; max-width:90%;">' +
-        '<div style="font-weight:700; font-size:15px; margin-bottom:14px; text-align:center;">폴리 규격 선택</div>' +
-        '<div style="display:grid; grid-template-columns:1fr 1fr; gap:8px;">' +
-          '<button onclick="selectPolyQuick(\'1호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">1호</button>' +
-          '<button onclick="selectPolyQuick(\'2호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">2호</button>' +
-          '<button onclick="selectPolyQuick(\'3호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">3호</button>' +
-          '<button onclick="selectPolyQuick(\'4호\')" style="padding:16px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:16px; font-weight:700; cursor:pointer;">4호</button>' +
-        '</div>' +
-        '<button onclick="closePolyPopup()" style="width:100%; padding:12px; margin-top:10px; background:none; border:1px solid var(--ring); border-radius:var(--r); color:var(--ink-3); font-size:14px; font-weight:600; cursor:pointer;">취소</button>' +
-      '</div>';
-    document.body.appendChild(popup);
-  }
-  popup.style.display = 'flex';
-}
-
-function closePolyPopup() {
-  const popup = document.getElementById('polyPopup');
-  if (popup) popup.style.display = 'none';
-}
-
-async function selectPolyQuick(polySize) {
-  closePolyPopup();
-  if (!lastScanData || !lastScanData.sku) return;
-
-  try {
-    // Supabase sku_poly에 저장
-    await sbPost('sku_poly?on_conflict=sku', {
-      sku: lastScanData.sku,
-      category_small: lastScanData.category_small || '',
-      poly_size: polySize,
-      updated_at: new Date().toISOString()
-    });
-
-    // 로컬 인덱스 갱신
-    if (sheetIndex && sheetIndex.polyBySku) {
-      sheetIndex.polyBySku[lastScanData.sku] = polySize;
-    }
-
-    // 화면 갱신
-    lastScanData.poly_size = polySize;
-    showLastScanResult(lastScanData);
-
-    // 소테이블에도 갱신된 폴리 전송
-    if (currentSubTable) {
-      trySendToSubTable(lastScanData);
-    }
-
-    showToast(polySize + ' 저장 완료');
-  } catch (e) {
-    console.error('폴리 저장 실패:', e);
-    showToast('저장 실패: ' + e.message);
-  }
 }
 
 // Supabase current_work 테이블에 직접 upsert
