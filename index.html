@@ -383,10 +383,12 @@
         <div style="margin-bottom:10px;">
           <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:4px;">요청 pcs</label>
           <input type="number" id="pfRequestPcs" placeholder="수정할 pcs 입력" style="width:100%; padding:12px; border:1px solid var(--ring); border-radius:var(--r); font-size:16px;">
+          <div id="pfConvertPreview" style="display:none; font-size:12px; color:var(--blue); margin-top:4px;"></div>
         </div>
         <div style="margin-bottom:12px;">
-          <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:4px;">사유 (선택)</label>
-          <input type="text" id="pfReason" placeholder="수정 사유" style="width:100%; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px;">
+          <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:6px;">사유</label>
+          <div id="pfReasonArea"></div>
+          <input type="text" id="pfReasonCustom" placeholder="사유를 입력하세요" style="display:none; width:100%; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px; margin-top:6px;">
         </div>
         <button class="btn-primary" onclick="submitPcsFix()" style="width:100%; padding:14px; background:var(--orange); color:#fff; border:none; border-radius:var(--r); font-size:15px; font-weight:600; cursor:pointer;">수정 요청 제출</button>
       </div>
@@ -1376,21 +1378,127 @@ function setPfTier(tier) {
     b.style.background = isSel ? 'var(--ink)' : 'var(--card)';
     b.style.color = isSel ? '#fff' : 'var(--ink)';
   });
+  updatePfReasonButtons();
+  updatePfConvertPreview();
 }
+
+// pcs 변환 함수 (3단↔4단)
+function convertPcs(value, fromTier) {
+  if (value == null || isNaN(value)) return null;
+  var result;
+  if (fromTier === 3) {
+    result = value * 380 / 515; // 3단→4단
+  } else {
+    result = value * 515 / 380; // 4단→3단
+  }
+  if (result < 15) return Math.floor(result);
+  return Math.floor(result / 5) * 5;
+}
+
+var pfSelectedReason = '';
+
+function updatePfReasonButtons() {
+  var area = document.getElementById('pfReasonArea');
+  if (!pcsFixTier || !pcsFixData) { area.innerHTML = ''; return; }
+
+  var requestPcs = parseInt(document.getElementById('pfRequestPcs').value);
+  var currentPcs = pcsFixTier === 3 ? pcsFixData.pcs3 : pcsFixData.pcs4;
+  var isMore = !isNaN(requestPcs) && currentPcs != null && requestPcs > currentPcs;
+  var isLess = !isNaN(requestPcs) && currentPcs != null && requestPcs < currentPcs;
+
+  var reasons = [];
+  if (isMore) {
+    reasons = ['수량 오기입', '기타'];
+  } else if (isLess) {
+    reasons = ['적치 불가능', '무게', '기타'];
+  } else {
+    reasons = ['수량 오기입', '적치 불가능', '무게', '기타'];
+  }
+
+  pfSelectedReason = '';
+  document.getElementById('pfReasonCustom').style.display = 'none';
+
+  area.innerHTML = '<div style="display:flex; gap:6px; flex-wrap:wrap;">' +
+    reasons.map(function(r) {
+      return '<button onclick="selectPfReason(\'' + r + '\')" data-reason="' + r + '" ' +
+        'style="padding:8px 14px; border:1px solid var(--ring); border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer; background:var(--card); color:var(--ink);">' + r + '</button>';
+    }).join('') + '</div>';
+}
+
+function selectPfReason(reason) {
+  pfSelectedReason = reason;
+  document.querySelectorAll('#pfReasonArea button').forEach(function(b) {
+    var isSel = b.dataset.reason === reason;
+    b.style.background = isSel ? 'var(--ink)' : 'var(--card)';
+    b.style.color = isSel ? '#fff' : 'var(--ink)';
+  });
+  var customInput = document.getElementById('pfReasonCustom');
+  customInput.style.display = reason === '기타' ? '' : 'none';
+  if (reason === '기타') customInput.focus();
+
+  updatePfConvertPreview();
+}
+
+function updatePfConvertPreview() {
+  var preview = document.getElementById('pfConvertPreview');
+  if (!preview || !pcsFixTier) { if (preview) preview.style.display = 'none'; return; }
+
+  var requestPcs = parseInt(document.getElementById('pfRequestPcs').value);
+  if (isNaN(requestPcs) || requestPcs <= 0) { preview.style.display = 'none'; return; }
+
+  var otherTier = pcsFixTier === 3 ? 4 : 3;
+  var otherPcs;
+
+  if (pfSelectedReason === '무게') {
+    // 무게: 3단,4단 동일 수치
+    otherPcs = requestPcs;
+  } else {
+    // 수량 오기입/적치 불가능: 비율 변환
+    otherPcs = convertPcs(requestPcs, pcsFixTier);
+  }
+
+  preview.textContent = otherTier + '단은 자동으로 ' + otherPcs + 'pcs로 변경됩니다';
+  preview.style.display = '';
+}
+
+// pcs 입력 시 실시간 미리보기
+document.addEventListener('input', function(e) {
+  if (e.target && e.target.id === 'pfRequestPcs') {
+    updatePfReasonButtons();
+    updatePfConvertPreview();
+  }
+});
 
 async function submitPcsFix() {
   if (!pcsFixData || !pcsFixTier) {
     showToast('단수를 선택해주세요');
     return;
   }
-  const requestPcs = parseInt(document.getElementById('pfRequestPcs').value);
+  var requestPcs = parseInt(document.getElementById('pfRequestPcs').value);
   if (isNaN(requestPcs) || requestPcs <= 0) {
     showToast('요청 pcs를 입력해주세요');
     return;
   }
+  if (!pfSelectedReason) {
+    showToast('사유를 선택해주세요');
+    return;
+  }
 
-  const currentPcs = pcsFixTier === 3 ? pcsFixData.pcs3 : pcsFixData.pcs4;
-  const reason = document.getElementById('pfReason').value.trim();
+  var reason = pfSelectedReason;
+  if (reason === '기타') {
+    var custom = document.getElementById('pfReasonCustom').value.trim();
+    if (!custom) { showToast('사유를 입력해주세요'); return; }
+    reason = '기타: ' + custom;
+  }
+
+  var currentPcs = pcsFixTier === 3 ? pcsFixData.pcs3 : pcsFixData.pcs4;
+  var otherTier = pcsFixTier === 3 ? 4 : 3;
+  var otherPcs;
+  if (pfSelectedReason === '무게') {
+    otherPcs = requestPcs; // 무게: 동일
+  } else {
+    otherPcs = convertPcs(requestPcs, pcsFixTier); // 비율 변환
+  }
 
   try {
     await sbPost('change_request', {
@@ -1399,18 +1507,20 @@ async function submitPcsFix() {
       location_code: pcsFixData.location_code || '',
       current_poly: '',
       request_poly: '',
-      current_tier: String(pcsFixTier),
+      current_tier: pcsFixTier + '단→' + otherTier + '단',
       current_pcs: currentPcs,
       request_pcs: requestPcs,
-      reason: reason || '적치 pcs 수정',
+      reason: reason + ' [' + otherTier + '단: ' + otherPcs + 'pcs]',
       status: '대기',
       request_type: 'pcs_fix'
     });
     showToast('수정 요청이 제출되었습니다');
     document.getElementById('pcsFixResult').style.display = 'none';
     document.getElementById('pcsFixBarcode').value = '';
+    document.getElementById('pcsFixSkuInput').value = '';
     document.getElementById('pcsFixBarcode').focus();
     pcsFixData = null;
+    pfSelectedReason = '';
   } catch (e) {
     showToast('제출 실패: ' + e.message);
   }
