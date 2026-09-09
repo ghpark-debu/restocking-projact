@@ -87,6 +87,10 @@
     </div>
 
     <div id="infoView" style="display:none;">
+      <div id="defectBanner" style="display:none; background:#fef2f2; border:1.5px solid #f87171; border-radius:var(--r); padding:14px; margin-bottom:10px; text-align:center;">
+        <div style="font-size:16px; font-weight:800; color:#dc2626; margin-bottom:4px;">⚠ 불량 주의 상품</div>
+        <div style="font-size:13px; color:#b91c1c;">이 상품은 불량 이력이 있습니다.<br>꼼꼼하게 확인해주세요.</div>
+      </div>
       <div class="card">
         <div class="card-color-bar" id="colorBar"></div>
         <div class="card-body">
@@ -266,6 +270,10 @@ function renderInfo(data) {
   document.getElementById('tPcsLabel').textContent = data.tier ? '대봉당 pcs (' + data.tier + '단)' : '대봉당 pcs';
   document.getElementById('tLoc').textContent = data.location_code || '-';
   document.getElementById('tTier').textContent = data.tier ? data.tier + '단' : '-';
+
+  // 불량 체크포인트 배너
+  var defectBanner = document.getElementById('defectBanner');
+  defectBanner.style.display = data.is_defect_check ? '' : 'none';
 
   // 조 정보 표시
   tableShift = data.work_shift || '';
