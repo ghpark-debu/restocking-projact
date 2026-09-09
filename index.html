@@ -231,9 +231,9 @@
   <!-- ============== 화면 0: 홈(모드 선택) ============== -->
   <div id="screenHome">
     <div class="home-menu">
-      <button class="home-btn collect" onclick="enterCollectMode()">
-                <div class="home-btn-title">데이터 수집 작업</div>
-        <div class="home-btn-desc">폴리 호수 · 대봉당 최대 pcs 실측 입력</div>
+      <button class="home-btn collect" onclick="enterStockMode()">
+                <div class="home-btn-title">적치 작업</div>
+        <div class="home-btn-desc">데이터 수집 · pcs 수정 요청</div>
       </button>
       <button class="home-btn quality" onclick="enterQualityMode()">
                 <div class="home-btn-title">양품화 작업</div>
@@ -278,6 +278,11 @@
     </div>
 
     <div id="adminTabRequests" class="hidden">
+      <div class="admin-filter-row" style="margin-bottom:4px;">
+        <button class="admin-filter-btn active" data-at="all" onclick="setAdminTypeFilter('all')">전체</button>
+        <button class="admin-filter-btn" data-at="general" onclick="setAdminTypeFilter('general')">일반</button>
+        <button class="admin-filter-btn" data-at="pcs_fix" onclick="setAdminTypeFilter('pcs_fix')">pcs 수정</button>
+      </div>
       <div class="admin-filter-row">
         <button class="admin-filter-btn active" data-af="대기" onclick="setAdminFilter('대기')">대기</button>
         <button class="admin-filter-btn" data-af="완료" onclick="setAdminFilter('완료')">완료</button>
@@ -317,6 +322,69 @@
     <div class="table-select-grid" id="grid3f"></div>
     <div class="floor-label">2층</div>
     <div class="table-select-grid" id="grid2f"></div>
+  </div>
+
+  <!-- ============== 화면 ST: 적치 작업 모드 선택 ============== -->
+  <div id="screenStockMenu" class="hidden" style="display:none">
+    <button class="btn-back" onclick="goHome()" style="font-size:20px; padding:4px 0;">&#8592;</button>
+    <div style="text-align:center; margin:20px 0 24px;">
+      <div style="font-size:18px; font-weight:700;">적치 작업</div>
+    </div>
+    <div class="home-menu">
+      <button class="home-btn collect" onclick="enterCollectMode()">
+        <div class="home-btn-title">데이터 수집</div>
+        <div class="home-btn-desc">폴리 호수 · 대봉당 최대 pcs 실측 입력</div>
+      </button>
+      <button class="home-btn" onclick="enterPcsFixMode()" style="border-left:4px solid var(--orange);">
+        <div class="home-btn-title" style="color:var(--orange);">적치 pcs 수정 요청</div>
+        <div class="home-btn-desc">기존 pcs 값 수정 요청 (관리자 승인)</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ============== 화면 PF: 적치 pcs 수정 요청 ============== -->
+  <div id="screenPcsFix" class="hidden" style="display:none">
+    <button class="btn-back" onclick="showScreen('screenStockMenu')" style="font-size:20px; padding:4px 0;">&#8592;</button>
+    <div style="text-align:center; margin:10px 0 16px;">
+      <div style="font-size:16px; font-weight:700;">적치 pcs 수정 요청</div>
+      <div style="font-size:12px; color:var(--ink-mute);">바코드를 스캔하면 현재 pcs를 확인하고 수정을 요청할 수 있습니다</div>
+    </div>
+    <div class="scan-box">
+      <input type="text" id="pcsFixBarcode" placeholder="바코드를 스캔하세요" autocomplete="off" inputmode="latin"
+        onkeydown="if(event.key==='Enter'){handlePcsFixScan(); event.preventDefault();}">
+    </div>
+    <div id="pcsFixResult" style="display:none; margin-top:12px;">
+      <div class="result-card">
+        <div class="sku" id="pfSku">-</div>
+        <div class="option" id="pfOption" style="font-size:13px; color:var(--ink-3); margin-bottom:10px;">-</div>
+        <div style="display:flex; gap:8px; margin-bottom:12px;">
+          <div class="info-box" style="flex:1; background:var(--surface); border-radius:var(--r); padding:10px; text-align:center;">
+            <div class="info-label">현재 pcs (3단)</div>
+            <div class="info-value" id="pfPcs3">-</div>
+          </div>
+          <div class="info-box" style="flex:1; background:var(--surface); border-radius:var(--r); padding:10px; text-align:center;">
+            <div class="info-label">현재 pcs (4단)</div>
+            <div class="info-value" id="pfPcs4">-</div>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:4px;">수정 요청할 단수</label>
+          <div style="display:flex; gap:6px;" id="pfTierSelect">
+            <button class="btn-opt" data-tier="3" onclick="setPfTier(3)" style="flex:1; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; background:var(--card);">3단</button>
+            <button class="btn-opt" data-tier="4" onclick="setPfTier(4)" style="flex:1; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; background:var(--card);">4단</button>
+          </div>
+        </div>
+        <div style="margin-bottom:10px;">
+          <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:4px;">요청 pcs</label>
+          <input type="number" id="pfRequestPcs" placeholder="수정할 pcs 입력" style="width:100%; padding:12px; border:1px solid var(--ring); border-radius:var(--r); font-size:16px;">
+        </div>
+        <div style="margin-bottom:12px;">
+          <label style="font-size:12px; font-weight:600; color:var(--ink-mute); display:block; margin-bottom:4px;">사유 (선택)</label>
+          <input type="text" id="pfReason" placeholder="수정 사유" style="width:100%; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px;">
+        </div>
+        <button class="btn-primary" onclick="submitPcsFix()" style="width:100%; padding:14px; background:var(--orange); color:#fff; border:none; border-radius:var(--r); font-size:15px; font-weight:600; cursor:pointer;">수정 요청 제출</button>
+      </div>
+    </div>
   </div>
 
   <!-- ============== 화면 C: 데이터 수집 목록 ============== -->
@@ -858,6 +926,13 @@ function loadSavedShift() {
 const ADMIN_PASSWORD = '0805';
 let adminAllRequests = [];
 let adminFilter = '대기';
+let adminTypeFilter = 'all';
+
+function setAdminTypeFilter(t) {
+  adminTypeFilter = t;
+  document.querySelectorAll('[data-at]').forEach(b => b.classList.toggle('active', b.dataset.at === t));
+  renderAdminRequests();
+}
 
 function openAdmin() {
   const pw = prompt('관리자 비밀번호를 입력하세요');
@@ -1094,11 +1169,14 @@ async function loadAdminRequests() {
 function renderAdminRequests() {
   const area = document.getElementById('adminRequestsArea');
   let list = adminAllRequests;
-  if (adminFilter !== 'all') list = adminAllRequests.filter(r => (r.status || '대기') === adminFilter);
+  if (adminFilter !== 'all') list = list.filter(r => (r.status || '대기') === adminFilter);
+  if (adminTypeFilter !== 'all') list = list.filter(r => (r.request_type || 'general') === adminTypeFilter);
   list = list.slice().reverse();
-  if (list.length === 0) { area.innerHTML = `<div class="collect-empty">${adminFilter} 상태의 요청이 없습니다</div>`; return; }
+  if (list.length === 0) { area.innerHTML = `<div class="collect-empty">해당 요청이 없습니다</div>`; return; }
   area.innerHTML = list.map(r => {
     const status = r.status || '대기';
+    const reqType = r.request_type || 'general';
+    const typeLabel = reqType === 'pcs_fix' ? '<span style="display:inline-block; font-size:10px; background:var(--orange); color:#fff; padding:1px 6px; border-radius:3px; margin-left:4px;">pcs수정</span>' : '';
     const polyChanged = r.request_poly && r.request_poly !== r.current_poly;
     const pcsChanged = (r.request_pcs !== '' && r.request_pcs != null) && String(r.request_pcs) !== String(r.current_pcs);
     let changes = '';
@@ -1114,7 +1192,7 @@ function renderAdminRequests() {
       actions = `<span class="req-status ${status==='완료'?'done':'reject'}">${status}</span>`;
     }
     return `<div class="req-card">
-      <div class="req-head"><div><span class="req-sku">${r.sku}</span>${r.category_small?`<span class="ci-cat">${r.category_small}</span>`:''}</div><span class="req-time">${r.datetime||''}</span></div>
+      <div class="req-head"><div><span class="req-sku">${r.sku}</span>${typeLabel}${r.category_small?`<span class="ci-cat">${r.category_small}</span>`:''}</div><span class="req-time">${r.datetime||''}</span></div>
       <div style="font-size:13px; color:var(--text-sub); margin-bottom:4px;">로케이션 ${r.location||'-'}</div>
       ${changes}
       ${r.reason?`<div class="req-reason">${escapeHtml(r.reason)}</div>`:''}
@@ -1182,6 +1260,106 @@ function enterQualityMode() {
   showScreen('screenTableSelect');
 }
 
+// ===== 적치 작업 모드 =====
+function enterStockMode() {
+  document.getElementById('headerTitle').textContent = '적치 작업';
+  showScreen('screenStockMenu');
+}
+
+// ===== 적치 pcs 수정 요청 =====
+let pcsFixData = null;
+let pcsFixTier = null;
+
+function enterPcsFixMode() {
+  document.getElementById('headerTitle').textContent = '적치 pcs 수정';
+  showScreen('screenPcsFix');
+  document.getElementById('pcsFixResult').style.display = 'none';
+  document.getElementById('pcsFixBarcode').value = '';
+  pcsFixData = null;
+  pcsFixTier = null;
+  setTimeout(function() { document.getElementById('pcsFixBarcode').focus(); }, 100);
+}
+
+async function handlePcsFixScan() {
+  const raw = document.getElementById('pcsFixBarcode').value.trim();
+  if (!raw) return;
+  document.getElementById('pcsFixBarcode').value = '';
+
+  if (!sheetIndex) await preloadSheetIndex();
+
+  const optionCode = parseOptionCode(raw);
+  const data = lookupLocal(optionCode);
+  if (!data) {
+    showToast('옵션코드 [' + optionCode + '] 를 찾을 수 없습니다');
+    return;
+  }
+
+  pcsFixData = data;
+  pcsFixTier = null;
+
+  document.getElementById('pfSku').textContent = data.sku || '-';
+  document.getElementById('pfOption').textContent = (data.option_name || '') + ' · ' + (data.product_name || '');
+  document.getElementById('pfPcs3').textContent = data.pcs3 != null ? data.pcs3 : '-';
+  document.getElementById('pfPcs4').textContent = data.pcs4 != null ? data.pcs4 : '-';
+  document.getElementById('pfRequestPcs').value = '';
+  document.getElementById('pfReason').value = '';
+
+  // 단수 선택 초기화
+  document.querySelectorAll('#pfTierSelect .btn-opt').forEach(function(b) {
+    b.style.background = 'var(--card)';
+    b.style.color = 'var(--ink)';
+  });
+
+  document.getElementById('pcsFixResult').style.display = '';
+}
+
+function setPfTier(tier) {
+  pcsFixTier = tier;
+  document.querySelectorAll('#pfTierSelect .btn-opt').forEach(function(b) {
+    var isSel = parseInt(b.dataset.tier) === tier;
+    b.style.background = isSel ? 'var(--ink)' : 'var(--card)';
+    b.style.color = isSel ? '#fff' : 'var(--ink)';
+  });
+}
+
+async function submitPcsFix() {
+  if (!pcsFixData || !pcsFixTier) {
+    showToast('단수를 선택해주세요');
+    return;
+  }
+  const requestPcs = parseInt(document.getElementById('pfRequestPcs').value);
+  if (isNaN(requestPcs) || requestPcs <= 0) {
+    showToast('요청 pcs를 입력해주세요');
+    return;
+  }
+
+  const currentPcs = pcsFixTier === 3 ? pcsFixData.pcs3 : pcsFixData.pcs4;
+  const reason = document.getElementById('pfReason').value.trim();
+
+  try {
+    await sbPost('change_request', {
+      sku: pcsFixData.sku,
+      category_small: pcsFixData.category_small || '',
+      location_code: pcsFixData.location_code || '',
+      current_poly: '',
+      request_poly: '',
+      current_tier: String(pcsFixTier),
+      current_pcs: currentPcs,
+      request_pcs: requestPcs,
+      reason: reason || '적치 pcs 수정',
+      status: '대기',
+      request_type: 'pcs_fix'
+    });
+    showToast('수정 요청이 제출되었습니다');
+    document.getElementById('pcsFixResult').style.display = 'none';
+    document.getElementById('pcsFixBarcode').value = '';
+    document.getElementById('pcsFixBarcode').focus();
+    pcsFixData = null;
+  } catch (e) {
+    showToast('제출 실패: ' + e.message);
+  }
+}
+
 function enterCollectMode() {
   document.getElementById('headerTitle').textContent = '데이터 수집';
   showScreen('screenCollectList');
@@ -1206,7 +1384,7 @@ function showTableSelect() {
 }
 
 function showScreen(id) {
-  const screens = ['screenShiftSelect', 'screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
+  const screens = ['screenShiftSelect', 'screenHome', 'screenAdmin', 'screenTableSelect', 'screenScan', 'screenWanpoly', 'screenResult', 'screenNewSku', 'screenStockMenu', 'screenPcsFix', 'screenCollectList', 'screenCollectInput', 'screenEditRequest'];
   screens.forEach(s => {
     const el = document.getElementById(s);
     if (s === id) {
@@ -1857,7 +2035,8 @@ async function trySendToSubTable(data) {
       categorySmall: data.category_small || '',
       expectedQty: assignedQty,
       actualQty: data.actual_qty || 0,
-      workShift: currentShift || ''
+      workShift: currentShift || '',
+      isDefectCheck: data.is_defect_check || false
     };
     pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
   }
@@ -1926,6 +2105,7 @@ async function pushToSubTableSupabase(p) {
     expected_qty: p.expectedQty || 0,
     actual_qty: p.actualQty || 0,
     work_shift: p.workShift || '',
+    is_defect_check: p.isDefectCheck || false,
     scanned_at: new Date().toISOString()
   };
   console.log('소테이블 전송 body:', JSON.stringify(body));
@@ -2004,14 +2184,15 @@ function preloadSheetIndex() {
 }
 
 async function loadSupabaseIndex() {
-  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows, completedRows] = await Promise.all([
+  const [invoiceRows, polyRows, bagRows, defectRows, stockRows, catRows, completedRows, defectCheckRows] = await Promise.all([
     sbFetch('invoice?select=option_code,sku,option_name,product_name,location_code,expected_qty&limit=50000'),
     sbFetch('sku_poly?select=sku,category_small,poly_size&limit=50000'),
     sbFetch('sku_bag?select=sku,category_small,pcs_3tier,pcs_4tier&limit=50000'),
     sbFetch('defect_hint?select=category,hint_text,severity&limit=5000'),
     sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
     sbFetch('category?select=sku,category_large,category_small&limit=50000'),
-    sbFetch('completed_invoice?select=option_code,actual_qty&limit=50000')
+    sbFetch('completed_invoice?select=option_code,actual_qty&limit=50000'),
+    sbFetch('sku_defect_check?select=option_code,sku&limit=50000')
   ]);
   const invoiceByOption = {};
   invoiceRows.forEach(r => { if (r.option_code) invoiceByOption[r.option_code] = { sku: r.sku||'', option_name: r.option_name||'', product_name: r.product_name||'', location_code: r.location_code||'', expected_qty: r.expected_qty||0 }; });
@@ -2026,16 +2207,20 @@ async function loadSupabaseIndex() {
   const completedByOption = {};
   completedRows.forEach(r => { if (r.option_code) completedByOption[r.option_code] = r.actual_qty || 0; });
 
+  const defectCheckByOption = {};
+  defectCheckRows.forEach(r => { if (r.option_code) defectCheckByOption[r.option_code] = true; if (r.sku) defectCheckByOption['sku:' + r.sku] = true; });
+
   const categoryBySku = {};
   catRows.forEach(r => { if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large||'', category_small: r.category_small||'' }; });
-  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku, completedByOption };
+  sheetIndex = { invoiceByOption, polyBySku, bagBySku, defectByCat, stockByOption, categoryBySku, completedByOption, defectCheckByOption };
   console.log('Supabase 인덱스 로드 완료:', 
     '전표', Object.keys(invoiceByOption).length,
     '/ 폴리', Object.keys(polyBySku).length,
     '/ 대봉', Object.keys(bagBySku).length,
     '/ 재고', Object.keys(stockByOption).length,
     '/ 카테고리', Object.keys(categoryBySku).length,
-    '/ 완료전표', Object.keys(completedByOption).length);
+    '/ 완료전표', Object.keys(completedByOption).length,
+    '/ 불량체크', Object.keys(defectCheckByOption).length);
   return sheetIndex;
 }
 
@@ -2128,7 +2313,8 @@ function lookupLocal(optionCode) {
     defect_hint_text: defect ? defect.hint_text : null,
     defect_hint_severity: defect ? defect.severity : null,
     expected_qty: invoice.expected_qty || 0,
-    actual_qty: (sheetIndex.completedByOption && sheetIndex.completedByOption[optionCode]) || 0
+    actual_qty: (sheetIndex.completedByOption && sheetIndex.completedByOption[optionCode]) || 0,
+    is_defect_check: !!(sheetIndex.defectCheckByOption && (sheetIndex.defectCheckByOption[optionCode] || sheetIndex.defectCheckByOption['sku:' + (invoice.sku || '')]))
   };
 }
 
