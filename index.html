@@ -347,11 +347,17 @@
     <button class="btn-back" onclick="showScreen('screenStockMenu')" style="font-size:20px; padding:4px 0;">&#8592;</button>
     <div style="text-align:center; margin:10px 0 16px;">
       <div style="font-size:16px; font-weight:700;">적치 pcs 수정 요청</div>
-      <div style="font-size:12px; color:var(--ink-mute);">바코드를 스캔하면 현재 pcs를 확인하고 수정을 요청할 수 있습니다</div>
+      <div style="font-size:12px; color:var(--ink-mute);">바코드 스캔 또는 SKU 검색으로 조회</div>
     </div>
     <div class="scan-box">
       <input type="text" id="pcsFixBarcode" placeholder="바코드를 스캔하세요" autocomplete="off" inputmode="latin"
         onkeydown="if(event.key==='Enter'){handlePcsFixScan(); event.preventDefault();}">
+      <div style="display:flex; gap:6px; margin-top:8px;">
+        <input type="text" id="pcsFixSkuInput" placeholder="SKU 검색 (예: 26580-865)" autocomplete="off"
+          style="flex:1; padding:10px; border:1px solid var(--ring); border-radius:var(--r); font-size:14px;"
+          onkeydown="if(event.key==='Enter'){handleSkuSearch(); event.preventDefault();}">
+        <button onclick="handleSkuSearch()" style="padding:10px 16px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer; white-space:nowrap;">SKU 검색</button>
+      </div>
     </div>
     <div id="pcsFixResult" style="display:none; margin-top:12px;">
       <div class="result-card">
@@ -1275,6 +1281,7 @@ function enterPcsFixMode() {
   showScreen('screenPcsFix');
   document.getElementById('pcsFixResult').style.display = 'none';
   document.getElementById('pcsFixBarcode').value = '';
+  document.getElementById('pcsFixSkuInput').value = '';
   pcsFixData = null;
   pcsFixTier = null;
   setTimeout(function() { document.getElementById('pcsFixBarcode').focus(); }, 100);
@@ -1294,11 +1301,60 @@ async function handlePcsFixScan() {
     return;
   }
 
+  showPcsFixResult(data);
+}
+
+async function handleSkuSearch() {
+  const skuInput = document.getElementById('pcsFixSkuInput').value.trim();
+  if (!skuInput) { showToast('SKU를 입력해주세요'); return; }
+
+  if (!sheetIndex) await preloadSheetIndex();
+
+  // SKU로 bagBySku에서 pcs 조회
+  const bag = sheetIndex.bagBySku ? sheetIndex.bagBySku[skuInput] : null;
+
+  // SKU로 invoiceByOption에서 옵션명 찾기 (첫 번째 매칭)
+  let optionName = '';
+  let productName = '';
+  let categorySmall = '';
+  if (sheetIndex.invoiceByOption) {
+    for (const key in sheetIndex.invoiceByOption) {
+      const inv = sheetIndex.invoiceByOption[key];
+      if (inv.sku === skuInput) {
+        optionName = inv.option_name || '';
+        productName = inv.product_name || '';
+        break;
+      }
+    }
+  }
+  if (sheetIndex.categoryBySku && sheetIndex.categoryBySku[skuInput]) {
+    categorySmall = sheetIndex.categoryBySku[skuInput].category_small || '';
+  }
+
+  if (!bag && !optionName) {
+    showToast('SKU [' + skuInput + '] 를 찾을 수 없습니다');
+    return;
+  }
+
+  const data = {
+    sku: skuInput,
+    option_name: optionName,
+    product_name: productName,
+    category_small: categorySmall || (bag ? bag.category_small : ''),
+    pcs3: bag ? bag.pcs3 : null,
+    pcs4: bag ? bag.pcs4 : null,
+    location_code: ''
+  };
+
+  showPcsFixResult(data);
+}
+
+function showPcsFixResult(data) {
   pcsFixData = data;
   pcsFixTier = null;
 
   document.getElementById('pfSku').textContent = data.sku || '-';
-  document.getElementById('pfOption').textContent = (data.option_name || '') + ' · ' + (data.product_name || '');
+  document.getElementById('pfOption').textContent = (data.option_name || '') + (data.product_name ? ' · ' + data.product_name : '');
   document.getElementById('pfPcs3').textContent = data.pcs3 != null ? data.pcs3 : '-';
   document.getElementById('pfPcs4').textContent = data.pcs4 != null ? data.pcs4 : '-';
   document.getElementById('pfRequestPcs').value = '';
