@@ -88,8 +88,9 @@
 
     <div id="infoView" style="display:none;">
       <div id="defectBanner" style="display:none; background:#fef2f2; border:1.5px solid #f87171; border-radius:var(--r); padding:14px; margin-bottom:10px; text-align:center;">
-        <div style="font-size:16px; font-weight:800; color:#dc2626; margin-bottom:4px;">⚠ 불량 주의 상품</div>
-        <div style="font-size:13px; color:#b91c1c;">이 상품은 불량 이력이 있습니다.<br>꼼꼼하게 확인해주세요.</div>
+        <div style="font-size:12px; color:#b91c1c; font-weight:600; margin-bottom:4px;">⚠ 불량 주의 상품</div>
+        <div id="defectReason" style="font-size:20px; font-weight:800; color:#dc2626; margin-bottom:4px;"></div>
+        <div style="font-size:11px; color:#b91c1c;">꼼꼼하게 확인해주세요</div>
       </div>
       <div class="card">
         <div class="card-color-bar" id="colorBar"></div>
@@ -277,7 +278,12 @@ function renderInfo(data) {
 
   // 불량 체크포인트 배너
   var defectBanner = document.getElementById('defectBanner');
-  defectBanner.style.display = data.is_defect_check ? '' : 'none';
+  if (data.is_defect_check) {
+    defectBanner.style.display = '';
+    document.getElementById('defectReason').textContent = data.defect_reason || '불량 이력 있음';
+  } else {
+    defectBanner.style.display = 'none';
+  }
 
   // 조 정보 표시
   tableShift = data.work_shift || '';
