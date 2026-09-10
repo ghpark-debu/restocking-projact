@@ -2217,7 +2217,8 @@ async function trySendToSubTable(data) {
       expectedQty: assignedQty,
       actualQty: data.actual_qty || 0,
       workShift: currentShift || '',
-      isDefectCheck: data.is_defect_check || false
+      isDefectCheck: data.is_defect_check || false,
+      defectReason: data.defect_reason || ''
     };
     pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
   }
@@ -2287,6 +2288,7 @@ async function pushToSubTableSupabase(p) {
     actual_qty: p.actualQty || 0,
     work_shift: p.workShift || '',
     is_defect_check: p.isDefectCheck || false,
+    defect_reason: p.defectReason || '',
     scanned_at: new Date().toISOString()
   };
   console.log('소테이블 전송 body:', JSON.stringify(body));
@@ -2373,7 +2375,7 @@ async function loadSupabaseIndex() {
     sbFetch('stock?select=option_code,sku,option_name,location_code,stock_qty&limit=50000'),
     sbFetch('category?select=sku,category_large,category_small&limit=50000'),
     sbFetch('completed_invoice?select=option_code,actual_qty&limit=50000'),
-    sbFetch('sku_defect_check?select=option_code,sku&limit=50000')
+    sbFetch('sku_defect_check?select=option_code,sku,reason&limit=50000')
   ]);
   const invoiceByOption = {};
   invoiceRows.forEach(r => { if (r.option_code) invoiceByOption[r.option_code] = { sku: r.sku||'', option_name: r.option_name||'', product_name: r.product_name||'', location_code: r.location_code||'', expected_qty: r.expected_qty||0 }; });
@@ -2389,7 +2391,7 @@ async function loadSupabaseIndex() {
   completedRows.forEach(r => { if (r.option_code) completedByOption[r.option_code] = r.actual_qty || 0; });
 
   const defectCheckByOption = {};
-  defectCheckRows.forEach(r => { if (r.option_code) defectCheckByOption[r.option_code] = true; if (r.sku) defectCheckByOption['sku:' + r.sku] = true; });
+  defectCheckRows.forEach(r => { var info = { check: true, reason: r.reason || '' }; if (r.option_code) defectCheckByOption[r.option_code] = info; if (r.sku) defectCheckByOption['sku:' + r.sku] = info; });
 
   const categoryBySku = {};
   catRows.forEach(r => { if (r.sku) categoryBySku[r.sku] = { category_large: r.category_large||'', category_small: r.category_small||'' }; });
@@ -2495,7 +2497,8 @@ function lookupLocal(optionCode) {
     defect_hint_severity: defect ? defect.severity : null,
     expected_qty: invoice.expected_qty || 0,
     actual_qty: (sheetIndex.completedByOption && sheetIndex.completedByOption[optionCode]) || 0,
-    is_defect_check: !!(sheetIndex.defectCheckByOption && (sheetIndex.defectCheckByOption[optionCode] || sheetIndex.defectCheckByOption['sku:' + (invoice.sku || '')]))
+    is_defect_check: !!(sheetIndex.defectCheckByOption && (sheetIndex.defectCheckByOption[optionCode] || sheetIndex.defectCheckByOption['sku:' + (invoice.sku || '')])),
+    defect_reason: (sheetIndex.defectCheckByOption && (sheetIndex.defectCheckByOption[optionCode] || sheetIndex.defectCheckByOption['sku:' + (invoice.sku || '')]) || {}).reason || ''
   };
 }
 
