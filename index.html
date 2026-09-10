@@ -313,6 +313,17 @@
         <button onclick="adminReloadData()" style="width:100%; padding:14px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:15px; font-weight:600; cursor:pointer; margin-bottom:10px;">데이터 새로고침</button>
         <div id="syncResultAdmin" style="font-size:13px; color:var(--text-sub); text-align:center;"></div>
       </div>
+
+      <div class="result-card" style="margin-top:12px;">
+        <div style="font-weight:700; margin-bottom:10px;">양품화 테이블 비우기</div>
+        <div style="font-size:13px; color:var(--ink-3); line-height:1.6; margin-bottom:12px;">
+          모든 소테이블(current_work)의 작업 데이터를 비웁니다.<br>
+          테스트 후 정리하거나 교대 시 초기화할 때 사용합니다.<br>
+          <b>processing_log(완료 기록)는 삭제되지 않습니다.</b>
+        </div>
+        <button onclick="adminClearAllTables()" style="width:100%; padding:14px; background:#b91c1c; color:#fff; border:none; border-radius:var(--r); font-size:15px; font-weight:600; cursor:pointer;">전체 테이블 비우기</button>
+        <div id="clearTableResult" style="font-size:13px; color:var(--text-sub); text-align:center; margin-top:8px;"></div>
+      </div>
     </div>
   </div>
 
@@ -1271,6 +1282,34 @@ async function adminReloadData() {
     if (idx.bagBySku) counts.push('대봉 ' + Object.keys(idx.bagBySku).length);
     if (idx.categoryBySku) counts.push('카테고리 ' + Object.keys(idx.categoryBySku).length);
     result.textContent = '완료 — ' + counts.join(' · ');
+    result.style.color = '#15803d';
+  } catch (e) {
+    result.textContent = '실패: ' + e.message;
+    result.style.color = '#b91c1c';
+  }
+}
+
+async function adminClearAllTables() {
+  if (!confirm('모든 소테이블의 작업 데이터를 비우시겠습니까?\n\n양품화 완료 기록(processing_log)은 유지됩니다.')) return;
+  const result = document.getElementById('clearTableResult');
+  result.textContent = '비우는 중...';
+  result.style.color = 'var(--blue)';
+  try {
+    // current_work의 모든 행 데이터를 빈 값으로 업데이트
+    const rows = await sbFetch('current_work?select=sub_table');
+    let cleared = 0;
+    for (const row of rows) {
+      if (!row.sub_table) continue;
+      await sbPost('current_work?on_conflict=sub_table', {
+        sub_table: row.sub_table, sku: '', option_name: '', product_name: '',
+        poly: '', pcs: null, bag_color: '', tier: null, location_code: '',
+        category_small: '', is_defect_check: false, defect_reason: '',
+        expected_qty: 0, actual_qty: 0, work_shift: '',
+        scanned_at: new Date().toISOString()
+      });
+      cleared++;
+    }
+    result.textContent = cleared + '개 테이블 비우기 완료';
     result.style.color = '#15803d';
   } catch (e) {
     result.textContent = '실패: ' + e.message;
