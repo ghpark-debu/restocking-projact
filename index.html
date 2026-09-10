@@ -1128,7 +1128,16 @@ async function callAdminGS(fnName, arg) {
       if (arg.requestPoly) await sbPost('sku_poly?on_conflict=sku', { sku: arg.sku, poly_size: arg.requestPoly, category_small: arg.categorySmall||'', updated_at: new Date().toISOString() });
       if (arg.requestPcs != null && arg.requestPcs !== '' && arg.tier) {
         const row = { sku: arg.sku, category_small: arg.categorySmall||'', updated_at: new Date().toISOString() };
-        if (String(arg.tier)==='3') row.pcs_3tier = parseInt(arg.requestPcs); else row.pcs_4tier = parseInt(arg.requestPcs);
+        const pcs = parseInt(arg.requestPcs);
+        // reason에서 반대편 단수 pcs 추출 [4단: 20pcs]
+        const otherMatch = (arg.reason || '').match(/\[(\d)단: (\d+)pcs\]/);
+        if (String(arg.tier).indexOf('3') >= 0) {
+          row.pcs_3tier = pcs;
+          if (otherMatch) row.pcs_4tier = parseInt(otherMatch[2]);
+        } else {
+          row.pcs_4tier = pcs;
+          if (otherMatch) row.pcs_3tier = parseInt(otherMatch[2]);
+        }
         await sbPost('sku_bag?on_conflict=sku', row);
       }
       await sbPatch('change_request?id=eq.' + arg.rowNum, { status: '완료', resolved_at: new Date().toISOString() });
@@ -1136,8 +1145,14 @@ async function callAdminGS(fnName, arg) {
         if (arg.requestPoly) sheetIndex.polyBySku[arg.sku] = arg.requestPoly;
         if (arg.requestPcs != null && arg.tier) {
           if (!sheetIndex.bagBySku[arg.sku]) sheetIndex.bagBySku[arg.sku] = { category_small:'', pcs3:null, pcs4:null };
-          if (String(arg.tier)==='3') sheetIndex.bagBySku[arg.sku].pcs3 = parseInt(arg.requestPcs);
-          else sheetIndex.bagBySku[arg.sku].pcs4 = parseInt(arg.requestPcs);
+          const otherMatch = (arg.reason || '').match(/\[(\d)단: (\d+)pcs\]/);
+          if (String(arg.tier).indexOf('3') >= 0) {
+            sheetIndex.bagBySku[arg.sku].pcs3 = parseInt(arg.requestPcs);
+            if (otherMatch) sheetIndex.bagBySku[arg.sku].pcs4 = parseInt(otherMatch[2]);
+          } else {
+            sheetIndex.bagBySku[arg.sku].pcs4 = parseInt(arg.requestPcs);
+            if (otherMatch) sheetIndex.bagBySku[arg.sku].pcs3 = parseInt(otherMatch[2]);
+          }
         }
       }
       return { ok: true };
