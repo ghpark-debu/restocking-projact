@@ -108,7 +108,7 @@
           </div>
           <div class="info-grid">
             <div class="info-box" id="tPolyBox" onclick="onPolyClick()" style="cursor:pointer;">
-              <div class="info-label">폴리 규격</div>
+              <div class="info-label" id="tPolyLabel">폴리 규격</div>
               <div class="info-value" id="tPoly">-</div>
             </div>
             <div class="info-box">
@@ -260,11 +260,15 @@ function renderInfo(data) {
   document.getElementById('tPoly').textContent = data.poly || '입력';
   var polyBox = document.getElementById('tPolyBox');
   if (!data.poly) {
-    polyBox.style.border = '1.5px dashed var(--blue)';
+    polyBox.style.border = '2px dashed var(--blue)';
+    polyBox.style.background = 'rgba(59,130,246,0.06)';
     document.getElementById('tPoly').style.color = 'var(--blue)';
+    document.getElementById('tPolyLabel').textContent = '폴리 규격 (탭하여 입력)';
   } else {
-    polyBox.style.border = '';
-    document.getElementById('tPoly').style.color = '';
+    polyBox.style.border = '1px solid var(--blue)';
+    polyBox.style.background = '';
+    document.getElementById('tPoly').style.color = 'var(--blue)';
+    document.getElementById('tPolyLabel').textContent = '폴리 규격 (탭하여 변경)';
   }
   document.getElementById('tPcs').textContent = data.pcs != null ? data.pcs : '-';
   document.getElementById('tPcsLabel').textContent = data.tier ? '대봉당 pcs (' + data.tier + '단)' : '대봉당 pcs';
@@ -438,39 +442,41 @@ function savePolyFromTable(polySize) {
   closePolyPopup();
   if (!currentData || !currentData.sku) return;
 
-  // Supabase sku_poly에 저장
-  fetch(SUPABASE_URL + '/rest/v1/sku_poly?on_conflict=sku', {
+  var currentPoly = currentData.poly || '';
+  if (currentPoly === polySize) {
+    alert('현재 폴리와 동일합니다.');
+    return;
+  }
+
+  // change_request에 수정 요청 저장
+  fetch(SUPABASE_URL + '/rest/v1/change_request', {
     method: 'POST',
     headers: {
       'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-      'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
+      'Content-Type': 'application/json', 'Prefer': 'return=representation'
     },
     body: JSON.stringify({
       sku: currentData.sku,
       category_small: currentData.category_small || '',
-      poly_size: polySize,
-      updated_at: new Date().toISOString()
+      location_code: currentData.location_code || '',
+      current_poly: currentPoly,
+      request_poly: polySize,
+      current_tier: '',
+      current_pcs: null,
+      request_pcs: null,
+      reason: '폴리 변경 요청: ' + (currentPoly || '없음') + ' → ' + polySize,
+      status: '대기',
+      request_type: 'general'
     })
   })
   .then(function(resp) {
     if (!resp.ok) throw new Error('HTTP ' + resp.status);
-    // 화면 갱신
-    currentData.poly = polySize;
-    document.getElementById('tPoly').textContent = polySize;
-    document.getElementById('tPoly').style.color = '';
-    document.getElementById('tPolyBox').style.border = '';
-
-    // current_work에도 폴리 업데이트
-    fetch(SUPABASE_URL + '/rest/v1/current_work?on_conflict=sub_table', {
-      method: 'POST',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY, 'Authorization': 'Bearer ' + SUPABASE_ANON_KEY,
-        'Content-Type': 'application/json', 'Prefer': 'resolution=merge-duplicates'
-      },
-      body: JSON.stringify({ sub_table: subTable, poly: polySize, scanned_at: currentData.scanned_at })
-    }).catch(function(e) { console.error('current_work 폴리 업데이트 실패:', e); });
+    alert('수정 요청이 제출되었습니다.\n\n' + (currentPoly || '없음') + ' → ' + polySize + '\n\n관리자 승인 후 반영됩니다.');
   })
-  .catch(function(e) { console.error('폴리 저장 실패:', e); alert('저장 실패: ' + e.message); });
+  .catch(function(e) {
+    console.error('수정 요청 실패:', e);
+    alert('요청 실패: ' + e.message);
+  });
 }
 
 // 로그 렌더링
