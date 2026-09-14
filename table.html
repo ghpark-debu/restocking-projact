@@ -338,7 +338,9 @@ function completeWork() {
       category_small: currentData.category_small || '',
       expected_qty: currentData.expected_qty || 0,
       actual_qty: currentData.actual_qty || 0,
-      work_shift: tableShift || currentData.work_shift || ''
+      work_shift: tableShift || currentData.work_shift || '',
+      option_code: currentData.option_code || '',
+      scanned_at: currentData.scanned_at || null
     })
   })
   .then(function(resp) {
