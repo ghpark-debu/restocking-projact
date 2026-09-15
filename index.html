@@ -2715,10 +2715,12 @@ async function trySendToSubTable(data) {
   const baseQty = count > 0 ? Math.floor(totalQty / count) : totalQty;
   const remainder = count > 0 ? totalQty % count : 0;
 
-  // 각 소테이블에 전송
-  for (let i = 0; i < available.length; i++) {
-    const assignedQty = baseQty + (i < remainder ? 1 : 0);
-    const payload = {
+  // 각 소테이블에 전송 + 결과 집계
+  var successCount = 0;
+  var failCount = 0;
+  for (var i = 0; i < available.length; i++) {
+    var assignedQty = baseQty + (i < remainder ? 1 : 0);
+    var payload = {
       subTable: available[i],
       sku: data.sku || '',
       optionName: data.option_name || '',
@@ -2736,15 +2738,20 @@ async function trySendToSubTable(data) {
       defectReason: data.defect_reason || '',
       optionCode: data.option_code || ''
     };
-    pushToSubTableSupabase(payload).catch(e => console.error('Supabase 전송 실패:', e));
+    try {
+      var ok = await pushToSubTableSupabase(payload);
+      if (ok) successCount++; else failCount++;
+    } catch(e) { failCount++; console.error('전송 오류:', e); }
   }
 
   // 결과 표시
   showLastScanInfo(data);
-  if (skipped.length > 0) {
-    showToast(available.length + '개 전송 / ' + skipped.length + '개 건너뜀 (미완료)');
+  if (failCount > 0) {
+    showToast(successCount + '개 성공 / ' + failCount + '개 실패');
+  } else if (skipped.length > 0) {
+    showToast(successCount + '개 전송 / ' + skipped.length + '개 건너뜀 (미완료)');
   } else if (count > 1) {
-    showToast(count + '개 테이블에 전송 (각 ' + baseQty + (remainder > 0 ? '~' + (baseQty + 1) : '') + '개)');
+    showToast(count + '개 테이블 전송 완료');
   }
 }
 
@@ -2819,8 +2826,14 @@ async function pushToSubTableSupabase(p) {
     },
     body: JSON.stringify(body)
   });
-  if (!resp.ok) console.error('소테이블 전송 실패:', resp.status, await resp.text());
-  else console.log('소테이블 전송 성공:', resp.status);
+  if (!resp.ok) {
+    var errText = await resp.text();
+    console.error('소테이블 전송 실패:', resp.status, errText);
+    showToast('전송 실패: ' + p.subTable + ' (' + resp.status + ')');
+    return false;
+  }
+  console.log('소테이블 전송 성공:', p.subTable);
+  return true;
 }
 
 // ===== 프리로드 인덱스(스캔 속도 향상용) =====
@@ -3048,6 +3061,12 @@ function lookupLocal(optionCode) {
 }
 
 async function handleBarcodeScan(rawBarcode) {
+  // 사입 카테고리 미선택 차단
+  if (!currentInvoiceType) {
+    showToast('사입 카테고리를 먼저 선택하세요');
+    return;
+  }
+
   const optionCode = parseOptionCode(rawBarcode);
 
   let data, error;
