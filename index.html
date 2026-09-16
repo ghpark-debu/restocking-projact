@@ -264,7 +264,14 @@
           <button onclick="moveDashDate(1)" style="padding:8px 12px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); cursor:pointer; font-weight:600;">&gt;</button>
         </div>
         <button onclick="loadDashboard()" style="width:100%; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; margin-bottom:6px;">현황 불러오기</button>
-        <button onclick="exportDashboardToClipboard()" style="width:100%; padding:10px; background:var(--card); color:var(--blue); border:1px solid var(--blue); border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:12px;">스프레드시트로 복사</button>
+        <button onclick="exportDashboardToClipboard()" style="width:100%; padding:10px; background:var(--card); color:var(--blue); border:1px solid var(--blue); border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:8px;">스프레드시트로 복사</button>
+        <div style="display:flex; gap:4px; flex-wrap:wrap; margin-bottom:12px;">
+          <button class="admin-filter-btn active" data-dit="all" onclick="setDashInvoiceFilter('all')">전체</button>
+          <button class="admin-filter-btn" data-dit="본사입" onclick="setDashInvoiceFilter('본사입')">본사입</button>
+          <button class="admin-filter-btn" data-dit="교환/미송/샘플" onclick="setDashInvoiceFilter('교환/미송/샘플')">교환/미송</button>
+          <button class="admin-filter-btn" data-dit="안전재고/추가/택배" onclick="setDashInvoiceFilter('안전재고/추가/택배')">안전재고</button>
+          <button class="admin-filter-btn" data-dit="휴가사입" onclick="setDashInvoiceFilter('휴가사입')">휴가</button>
+        </div>
         <div id="dashboardArea"><div class="collect-empty">위 버튼을 눌러 현황을 불러오세요</div></div>
       </div>
       <div id="dashboardLogArea" style="display:none; margin-top:10px;">
@@ -869,6 +876,8 @@ function doSelectTable(tableCode, floor) {
   currentSubTable = null;
   multiSubTables = [];
   isMultiMode = false;
+  currentInvoiceType = null;
+  document.querySelectorAll('#invoiceTypeGrid button').forEach(function(b) { b.style.background = 'var(--card)'; b.style.color = ''; });
   document.getElementById('currentTableLabel').textContent = tableCode;
   showScreen('screenScan');
   loadTodayStat();
@@ -1082,127 +1091,164 @@ function openQrPage() {
 
 // ===== 대시보드: 테이블별 양품화 현황 =====
 let dashboardLogs = [];
+let dashInvoiceFilter = 'all';
 
 // 날짜 초기화
 (function initDashDate() {
-  const el = document.getElementById('dashDate');
+  var el = document.getElementById('dashDate');
   if (el) el.value = new Date().toISOString().split('T')[0];
 })();
 
 function moveDashDate(delta) {
-  const el = document.getElementById('dashDate');
-  const d = new Date(el.value);
+  var el = document.getElementById('dashDate');
+  var d = new Date(el.value);
   d.setDate(d.getDate() + delta);
   el.value = d.toISOString().split('T')[0];
   loadDashboard();
 }
 
+function setDashInvoiceFilter(f) {
+  dashInvoiceFilter = f;
+  document.querySelectorAll('[data-dit]').forEach(function(b) { b.classList.toggle('active', b.dataset.dit === f); });
+  renderDashboard();
+}
+
 async function loadDashboard() {
-  const area = document.getElementById('dashboardArea');
+  var area = document.getElementById('dashboardArea');
   area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
   try {
-    const dateStr = document.getElementById('dashDate').value;
-    const startDate = new Date(dateStr);
-    startDate.setHours(0, 0, 0, 0);
-    const endDate = new Date(dateStr);
-    endDate.setDate(endDate.getDate() + 1);
-    endDate.setHours(0, 0, 0, 0);
-
-    const logs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(startDate.toISOString()) + '&completed_at=lt.' + encodeURIComponent(endDate.toISOString()) + '&order=completed_at.desc&limit=5000');
-    dashboardLogs = logs;
-
-    if (!logs.length) {
-      area.innerHTML = '<div class="collect-empty">오늘 완료된 양품화 작업이 없습니다</div>';
-      return;
-    }
-
-    // 테이블별 집계 (sub_table에서 대테이블 추출: '3층-1-3' → '3층-1')
-    const tableMap = {};
-    logs.forEach(function(log) {
-      const parts = (log.sub_table || '').split('-');
-      const tableKey = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
-      if (!tableMap[tableKey]) tableMap[tableKey] = { options: new Set(), pcs: 0, count: 0, logs: [] };
-      tableMap[tableKey].options.add(log.sku);
-      tableMap[tableKey].pcs += (log.actual_qty || log.expected_qty || 0);
-      tableMap[tableKey].count += 1;
-      tableMap[tableKey].logs.push(log);
-    });
-
-    // 총합
-    const totalOptions = new Set(logs.map(l => l.sku)).size;
-    const totalPcs = logs.reduce((s, l) => s + (l.actual_qty || l.expected_qty || 0), 0);
-    const totalCount = logs.length;
-
-    // 조별 집계
-    const shiftMap = {};
-    logs.forEach(function(log) {
-      const s = log.work_shift || '미지정';
-      if (!shiftMap[s]) shiftMap[s] = { options: new Set(), pcs: 0, count: 0 };
-      shiftMap[s].options.add(log.sku);
-      shiftMap[s].pcs += (log.actual_qty || log.expected_qty || 0);
-      shiftMap[s].count += 1;
-    });
-
-    let html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
-      '<div style="font-size:12px; color:var(--blue); font-weight:600;">' + dateStr + '</div>' +
-      '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + totalCount + '건</div>' +
-    '</div>';
-
-    // 조별 요약
-    var shiftKeys = Object.keys(shiftMap).sort();
-    if (shiftKeys.length > 0) {
-      html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
-      shiftKeys.forEach(function(s) {
-        var si = shiftMap[s];
-        html += '<div style="flex:1; background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:8px; text-align:center;">' +
-          '<div style="font-size:11px; color:var(--ink-mute); font-weight:600;">' + s + '</div>' +
-          '<div style="font-size:14px; font-weight:800; margin-top:2px;">' + si.count + '건</div>' +
-          '<div style="font-size:11px; color:var(--ink-3);">' + si.pcs + ' pcs</div>' +
-        '</div>';
-      });
-      html += '</div>';
-    }
-
-    const sortedKeys = Object.keys(tableMap).sort();
-    html += '<div style="display:flex; flex-direction:column; gap:6px;">';
-    sortedKeys.forEach(function(key) {
-      const t = tableMap[key];
-      html += '<div class="collect-item" onclick="showDashLog(\'' + key + '\')" style="cursor:pointer;">' +
-        '<div class="ci-left">' +
-          '<div class="ci-sku">' + key + '</div>' +
-          '<div class="ci-sub">' + t.count + '건 완료</div>' +
-        '</div>' +
-        '<div class="ci-right">' +
-          '<div class="ci-loc">' + t.options.size + '종</div>' +
-          '<div class="ci-stock">' + t.pcs + ' pcs</div>' +
-        '</div>' +
-      '</div>';
-    });
-    html += '</div>';
-    area.innerHTML = html;
-  } catch (e) {
+    var dateStr = document.getElementById('dashDate').value;
+    var startDate = new Date(dateStr); startDate.setHours(0,0,0,0);
+    var endDate = new Date(dateStr); endDate.setDate(endDate.getDate()+1); endDate.setHours(0,0,0,0);
+    dashboardLogs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(startDate.toISOString()) + '&completed_at=lt.' + encodeURIComponent(endDate.toISOString()) + '&order=completed_at.desc&limit=5000');
+    renderDashboard();
+  } catch(e) {
     area.innerHTML = '<div class="collect-empty">불러오기 실패: ' + e.message + '</div>';
   }
 }
 
+function renderDashboard() {
+  var area = document.getElementById('dashboardArea');
+  var dateStr = document.getElementById('dashDate').value;
+  var logs = dashboardLogs;
+  if (dashInvoiceFilter !== 'all') logs = logs.filter(function(l) { return (l.invoice_type || '') === dashInvoiceFilter; });
+
+  if (!logs.length) {
+    area.innerHTML = '<div class="collect-empty">' + (dashInvoiceFilter !== 'all' ? dashInvoiceFilter + ' ' : '') + '완료된 작업이 없습니다</div>';
+    return;
+  }
+
+  var tableMap = {};
+  logs.forEach(function(log) {
+    var parts = (log.sub_table || '').split('-');
+    var tableKey = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
+    if (!tableMap[tableKey]) tableMap[tableKey] = { options: new Set(), pcs: 0, count: 0, logs: [], totalSec: 0, timedCount: 0 };
+    tableMap[tableKey].options.add(log.sku);
+    tableMap[tableKey].pcs += (log.actual_qty || log.expected_qty || 0);
+    tableMap[tableKey].count += 1;
+    tableMap[tableKey].logs.push(log);
+    if (log.scanned_at && log.completed_at) {
+      var sec = (new Date(log.completed_at) - new Date(log.scanned_at)) / 1000;
+      if (sec > 0 && sec < 3600) { tableMap[tableKey].totalSec += sec; tableMap[tableKey].timedCount += 1; }
+    }
+  });
+
+  var totalOptions = new Set(logs.map(function(l) { return l.sku; })).size;
+  var totalPcs = logs.reduce(function(s, l) { return s + (l.actual_qty || l.expected_qty || 0); }, 0);
+  var totalCount = logs.length;
+  var totalSec = 0, timedTotal = 0;
+  logs.forEach(function(l) {
+    if (l.scanned_at && l.completed_at) {
+      var s = (new Date(l.completed_at) - new Date(l.scanned_at)) / 1000;
+      if (s > 0 && s < 3600) { totalSec += s; timedTotal += 1; }
+    }
+  });
+  var avgTimeStr = timedTotal > 0 ? formatSeconds(Math.round(totalSec / timedTotal)) : '-';
+
+  var shiftMap = {};
+  logs.forEach(function(log) {
+    var s = log.work_shift || '미지정';
+    if (!shiftMap[s]) shiftMap[s] = { pcs: 0, count: 0, totalSec: 0, timedCount: 0 };
+    shiftMap[s].pcs += (log.actual_qty || log.expected_qty || 0);
+    shiftMap[s].count += 1;
+    if (log.scanned_at && log.completed_at) {
+      var sec = (new Date(log.completed_at) - new Date(log.scanned_at)) / 1000;
+      if (sec > 0 && sec < 3600) { shiftMap[s].totalSec += sec; shiftMap[s].timedCount += 1; }
+    }
+  });
+
+  var html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
+    '<div style="font-size:12px; color:var(--blue); font-weight:600;">' + dateStr + (dashInvoiceFilter !== 'all' ? ' · ' + dashInvoiceFilter : '') + '</div>' +
+    '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + totalCount + '건</div>' +
+    '<div style="font-size:12px; color:var(--ink-mute); margin-top:2px;">평균 작업시간: ' + avgTimeStr + '</div>' +
+  '</div>';
+
+  var shiftKeys = Object.keys(shiftMap).sort();
+  if (shiftKeys.length > 0) {
+    html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
+    shiftKeys.forEach(function(s) {
+      var si = shiftMap[s];
+      var shiftAvg = si.timedCount > 0 ? formatSeconds(Math.round(si.totalSec / si.timedCount)) : '-';
+      html += '<div style="flex:1; background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:8px; text-align:center;">' +
+        '<div style="font-size:11px; color:var(--ink-mute); font-weight:600;">' + s + '</div>' +
+        '<div style="font-size:14px; font-weight:800; margin-top:2px;">' + si.count + '건</div>' +
+        '<div style="font-size:11px; color:var(--ink-3);">' + si.pcs + ' pcs</div>' +
+        '<div style="font-size:10px; color:var(--ink-mute);">평균 ' + shiftAvg + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  }
+
+  var sortedKeys = Object.keys(tableMap).sort();
+  html += '<div style="display:flex; flex-direction:column; gap:6px;">';
+  sortedKeys.forEach(function(key) {
+    var t = tableMap[key];
+    var tAvg = t.timedCount > 0 ? formatSeconds(Math.round(t.totalSec / t.timedCount)) : '-';
+    html += '<div class="collect-item" onclick="showDashLog(\x27' + key + '\x27)" style="cursor:pointer;">' +
+      '<div class="ci-left">' +
+        '<div class="ci-sku">' + key + '</div>' +
+        '<div class="ci-sub">' + t.count + '건 · 평균 ' + tAvg + '</div>' +
+      '</div>' +
+      '<div class="ci-right">' +
+        '<div class="ci-loc">' + t.options.size + '종</div>' +
+        '<div class="ci-stock">' + t.pcs + ' pcs</div>' +
+      '</div>' +
+    '</div>';
+  });
+  html += '</div>';
+  area.innerHTML = html;
+}
+
+function formatSeconds(sec) {
+  if (sec < 60) return sec + '초';
+  var m = Math.floor(sec / 60);
+  var s = sec % 60;
+  return m + '분' + (s > 0 ? s + '초' : '');
+}
+
 function showDashLog(tableKey) {
-  const logArea = document.getElementById('dashboardLogArea');
-  const logList = document.getElementById('dashLogList');
+  var logArea = document.getElementById('dashboardLogArea');
+  var logList = document.getElementById('dashLogList');
   document.getElementById('dashLogTitle').textContent = tableKey + ' 작업 로그';
 
-  const filtered = dashboardLogs.filter(function(log) {
-    const parts = (log.sub_table || '').split('-');
-    const key = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
+  var filtered = dashboardLogs.filter(function(log) {
+    var parts = (log.sub_table || '').split('-');
+    var key = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
     return key === tableKey;
   });
+  if (dashInvoiceFilter !== 'all') filtered = filtered.filter(function(l) { return (l.invoice_type || '') === dashInvoiceFilter; });
 
   if (!filtered.length) {
     logList.innerHTML = '<div class="collect-empty">로그 없음</div>';
   } else {
     logList.innerHTML = filtered.map(function(log) {
-      var scanTime = '', completeTime = '';
+      var scanTime = '', completeTime = '', duration = '';
       try { scanTime = log.scanned_at ? new Date(log.scanned_at).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit' }) : '-'; } catch(e) {}
       try { completeTime = log.completed_at ? new Date(log.completed_at).toLocaleString('ko-KR', { hour:'2-digit', minute:'2-digit' }) : '-'; } catch(e) {}
+      if (log.scanned_at && log.completed_at) {
+        var sec = Math.round((new Date(log.completed_at) - new Date(log.scanned_at)) / 1000);
+        if (sec > 0 && sec < 3600) duration = ' (' + formatSeconds(sec) + ')';
+      }
       return '<div class="log-item" style="padding:10px 12px;">' +
         '<div style="display:flex; justify-content:space-between; margin-bottom:2px;">' +
           '<span class="log-sku" style="font-size:14px;">' + (log.sku || '-') + '</span>' +
@@ -1211,52 +1257,38 @@ function showDashLog(tableKey) {
         '<div style="font-size:12px; color:var(--ink-3);">' + (log.option_code || '') + ' · ' + (log.option_name || '') + '</div>' +
         '<div style="font-size:12px; color:var(--ink-mute); margin-top:3px;">' +
           '실입고 <b>' + (log.actual_qty || 0) + '</b> · ' + (log.location_code || '-') +
+          (log.invoice_type ? ' · <span style="color:var(--blue);">' + log.invoice_type + '</span>' : '') +
         '</div>' +
         '<div style="font-size:11px; color:var(--ink-mute); margin-top:2px;">' +
-          '시작 ' + scanTime + ' → 완료 ' + completeTime +
+          '시작 ' + scanTime + ' → 완료 ' + completeTime + duration +
         '</div>' +
       '</div>';
     }).join('');
   }
-
   logArea.style.display = '';
 }
 
 // 대시보드 데이터를 스프레드시트용 TSV로 복사
 function exportDashboardToClipboard() {
   if (!dashboardLogs.length) { showToast('데이터가 없습니다'); return; }
-  var header = '옵션코드\tSKU\t옵션명\t실입고수량\t작업테이블\t작업시작\t작업완료\t조';
-  var rows = dashboardLogs.map(function(log) {
+  var logs = dashboardLogs;
+  if (dashInvoiceFilter !== 'all') logs = logs.filter(function(l) { return (l.invoice_type || '') === dashInvoiceFilter; });
+  var header = '옵션코드\tSKU\t옵션명\t실입고수량\t작업테이블\t작업시작\t작업완료\t조\t카테고리';
+  var rows = logs.map(function(log) {
     var scanTime = '', completeTime = '';
     try { scanTime = log.scanned_at ? new Date(log.scanned_at).toLocaleString('ko-KR') : ''; } catch(e) {}
     try { completeTime = log.completed_at ? new Date(log.completed_at).toLocaleString('ko-KR') : ''; } catch(e) {}
-    return [
-      log.option_code || '', log.sku || '', log.option_name || '',
-      log.actual_qty || 0, log.sub_table || '',
-      scanTime, completeTime, log.work_shift || ''
-    ].join('\t');
+    return [log.option_code||'', log.sku||'', log.option_name||'', log.actual_qty||0, log.sub_table||'', scanTime, completeTime, log.work_shift||'', log.invoice_type||''].join('\t');
   });
   var tsv = header + '\n' + rows.join('\n');
-
   if (navigator.clipboard) {
-    navigator.clipboard.writeText(tsv).then(function() {
-      showToast('클립보드에 복사됨 — 스프레드시트에 붙여넣기 하세요');
-    }).catch(function() {
-      fallbackCopy(tsv);
-    });
-  } else {
-    fallbackCopy(tsv);
-  }
+    navigator.clipboard.writeText(tsv).then(function() { showToast('클립보드에 복사됨'); }).catch(function() { fallbackCopy(tsv); });
+  } else { fallbackCopy(tsv); }
 }
 
 function fallbackCopy(text) {
-  var ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.cssText = 'position:fixed;top:-9999px';
-  document.body.appendChild(ta);
-  ta.select();
-  document.execCommand('copy');
-  document.body.removeChild(ta);
+  var ta = document.createElement('textarea'); ta.value = text; ta.style.cssText = 'position:fixed;top:-9999px';
+  document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
   showToast('클립보드에 복사됨');
 }
 
@@ -2378,7 +2410,7 @@ function renderCollectInput(data) {
   // 재고 배너(목록에서 이미 걸러졌지만 참고 표시)
   if (stock <= LOW_STOCK_THRESHOLD) {
     stockBanner.className = 'stock-banner low';
-    stockBanner.innerHTML = `⚠️ 재고 ${stock}개 · 로케이션 ${data.location_code || '-'} — 대봉 못 채울 수 있음`;
+    stockBanner.innerHTML = `재고 ${stock}개 · 로케이션 ${data.location_code || '-'} — 대봉 못 채울 수 있음`;
   } else {
     stockBanner.className = 'stock-banner ok';
     stockBanner.innerHTML = `로케이션 ${data.location_code || '-'} · 재고 ${stock}개`;
@@ -2395,7 +2427,7 @@ function renderCollectInput(data) {
     if (data.pcs_per_bag_3tier != null) parts.push(`3단 ${data.pcs_per_bag_3tier}pcs`);
     if (data.pcs_per_bag_4tier != null) parts.push(`4단 ${data.pcs_per_bag_4tier}pcs`);
     alreadyBanner.className = 'already-banner';
-    alreadyBanner.innerHTML = `ℹ️ 일부 값이 이미 있습니다 (${parts.join(' · ')}). 다시 입력하면 덮어씁니다.`;
+    alreadyBanner.innerHTML = `일부 값이 이미 있습니다 (${parts.join(' · ')}). 다시 입력하면 덮어씁니다.`;
     alreadyBanner.style.display = '';
   } else {
     alreadyBanner.style.display = 'none';
@@ -2439,7 +2471,6 @@ function renderCollectInput(data) {
   } else if (bagExcluded && pcsLocked) {
     // 대봉 제외지만 이미 대봉값이 있음 → 값 보여주고(잠금) 수정 버튼만 노출(신규 입력은 막음)
     if (pcsGroup) pcsGroup.style.display = '';
-    if (fillCheck) fillCheck.style.display = 'none';
     const pcsInput = document.getElementById('colPcsInput');
     pcsInput.disabled = true;
     pcsInput.style.opacity = '0.5';
@@ -2535,7 +2566,7 @@ async function submitCollect() {
         if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: cat, pcs3: null, pcs4: null };
         if (cat) sheetIndex.bagBySku[sku].category_small = cat;
         if (hasPcs) {
-          const otherPcs = convertPcsLocal(pcsValue, tier);
+          const otherPcs = convertPcs(pcsValue, tier);
           if (tier === 4) {
             sheetIndex.bagBySku[sku].pcs4 = pcsValue;
             if (otherPcs != null) sheetIndex.bagBySku[sku].pcs3 = otherPcs;
@@ -2628,7 +2659,7 @@ async function saveNewSkuToSheet(payload) {
     if (payload.polySize)
       await sbPost('sku_poly?on_conflict=sku', { sku, category_small: catSmall, poly_size: payload.polySize, updated_at: new Date().toISOString() });
     if (payload.pcs != null && payload.tier) {
-      const inputPcs = Number(payload.pcs), otherPcs = convertPcsLocal(inputPcs, payload.tier);
+      const inputPcs = Number(payload.pcs), otherPcs = convertPcs(inputPcs, payload.tier);
       const row = { sku, category_small: catSmall, updated_at: new Date().toISOString() };
       if (payload.tier === 4) { row.pcs_4tier = inputPcs; if (otherPcs != null) row.pcs_3tier = otherPcs; }
       else { row.pcs_3tier = inputPcs; if (otherPcs != null) row.pcs_4tier = otherPcs; }
@@ -2736,7 +2767,8 @@ async function trySendToSubTable(data) {
       workShift: currentShift || '',
       isDefectCheck: data.is_defect_check || false,
       defectReason: data.defect_reason || '',
-      optionCode: data.option_code || ''
+      optionCode: data.option_code || '',
+      invoiceType: currentInvoiceType || ''
     };
     try {
       var ok = await pushToSubTableSupabase(payload);
@@ -2813,6 +2845,7 @@ async function pushToSubTableSupabase(p) {
     is_defect_check: p.isDefectCheck || false,
     defect_reason: p.defectReason || '',
     option_code: p.optionCode || '',
+    invoice_type: p.invoiceType || '',
     scanned_at: new Date().toISOString()
   };
   console.log('소테이블 전송 body:', JSON.stringify(body));
@@ -2968,11 +3001,8 @@ async function loadSupabaseIndex() {
 // 4단→3단: ×515/380 (3단이 더 높아 더 들어감)
 // 3단→4단: ×380/515 (4단이 더 낮아 덜 들어감)
 function convertPcsLocal(pcs, fromTier) {
-  if (pcs == null) return null;
-  const n = Number(pcs);
-  if (isNaN(n) || n <= 0) return null;
-  const raw = fromTier === 4 ? n * 515 / 380 : n * 380 / 515;
-  return n < 15 ? Math.floor(raw) : Math.floor(raw / 5) * 5;
+  // convertPcs로 통합 — 호환성 유지용 래퍼
+  return convertPcs(pcs, fromTier);
 }
 
 function tierFromLocation(loc) {
@@ -3266,7 +3296,7 @@ function renderResultScreen(data) {
   if (data.defect_hint_text) {
     const sevClass = data.defect_hint_severity >= 3 ? 'sev3' : (data.defect_hint_severity === 2 ? 'sev2' : 'sev1');
     noteEl.className = `defect-note ${sevClass}`;
-    noteEl.textContent = `⚠️ ${data.defect_hint_text}`;
+    noteEl.textContent = `${data.defect_hint_text}`;
     noteEl.classList.remove('hidden');
     if (spacerEl) spacerEl.classList.add('hidden');
   } else {
@@ -3404,7 +3434,7 @@ async function submitNewSku() {
         categorySmall: currentScan.category_small || ''
       });
       // 로컬 프리로드 인덱스도 즉시 갱신(다음 스캔부터 기존값으로 나오게)
-      const otherPcs = convertPcsLocal(pcsValue, tier);
+      const otherPcs = convertPcs(pcsValue, tier);
       if (sheetIndex) {
         sheetIndex.polyBySku[sku] = selectedPolySize;
         if (!sheetIndex.bagBySku[sku]) sheetIndex.bagBySku[sku] = { category_small: currentScan.category_small || '', pcs3: null, pcs4: null };
@@ -3438,7 +3468,7 @@ async function submitNewSku() {
   if (DUMMY_MODE || !sbClient) {
     await insertProcessingLog({ sku, option_code: currentScan.option_code, tier_used: tier, pcs: pcsValue, is_wanpoly: false });
     showToast('[더미] 신규 값이 등록되었습니다');
-    const otherPcsDummy = convertPcsLocal(pcsValue, tier);
+    const otherPcsDummy = convertPcs(pcsValue, tier);
     currentScan.poly_size = selectedPolySize;
     currentScan.pcs_for_current_tier = pcsValue;
     if (tier === 3) { currentScan.pcs_per_bag_3tier = pcsValue; if (otherPcsDummy != null) currentScan.pcs_per_bag_4tier = otherPcsDummy; }
