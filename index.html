@@ -250,6 +250,8 @@
   <div id="screenAdmin" class="hidden" style="display:none">
     <div class="admin-tabs">
       <button class="admin-tab active" data-atab="dashboard" onclick="switchAdminTab('dashboard')">대시보드</button>
+      <button class="admin-tab" data-atab="live" onclick="switchAdminTab('live')">현황</button>
+      <button class="admin-tab" data-atab="report" onclick="switchAdminTab('report')">리포트</button>
       <button class="admin-tab" data-atab="requests" onclick="switchAdminTab('requests')">수정요청</button>
       <button class="admin-tab" data-atab="qr" onclick="switchAdminTab('qr')">QR</button>
       <button class="admin-tab" data-atab="sync" onclick="switchAdminTab('sync')">동기화</button>
@@ -282,6 +284,42 @@
           </div>
           <div id="dashLogList"></div>
         </div>
+      </div>
+    </div>
+
+    <!-- ===== 실시간 현황 탭 ===== -->
+    <div id="adminTabLive" class="hidden">
+      <div class="result-card">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px;">
+          <div style="font-weight:700;">실시간 작업 현황</div>
+          <button onclick="loadLiveStatus()" style="padding:6px 14px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:12px; font-weight:600; cursor:pointer;">새로고침</button>
+        </div>
+        <div id="liveStatusArea"><div class="collect-empty">새로고침을 눌러 현황을 불러오세요</div></div>
+      </div>
+    </div>
+
+    <!-- ===== 리포트 탭 ===== -->
+    <div id="adminTabReport" class="hidden">
+      <div class="result-card">
+        <div style="font-weight:700; margin-bottom:12px;">기간별 리포트</div>
+        <div style="display:flex; gap:6px; margin-bottom:10px;">
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--ink-mute); font-weight:600;">시작일</label>
+            <input type="date" id="reportFrom" style="width:100%; padding:8px; border:1px solid var(--ring); border-radius:var(--r); font-size:13px;">
+          </div>
+          <div style="flex:1;">
+            <label style="font-size:11px; color:var(--ink-mute); font-weight:600;">종료일</label>
+            <input type="date" id="reportTo" style="width:100%; padding:8px; border:1px solid var(--ring); border-radius:var(--r); font-size:13px;">
+          </div>
+        </div>
+        <div style="display:flex; gap:6px; margin-bottom:12px;">
+          <button onclick="setReportRange('week')" style="flex:1; padding:8px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:12px; font-weight:600; cursor:pointer;">이번 주</button>
+          <button onclick="setReportRange('month')" style="flex:1; padding:8px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:12px; font-weight:600; cursor:pointer;">이번 달</button>
+          <button onclick="setReportRange('lastweek')" style="flex:1; padding:8px; border:1px solid var(--ring); border-radius:var(--r); background:var(--card); font-size:12px; font-weight:600; cursor:pointer;">지난 주</button>
+        </div>
+        <button onclick="loadReport()" style="width:100%; padding:12px; background:var(--blue); color:#fff; border:none; border-radius:var(--r); font-size:14px; font-weight:600; cursor:pointer; margin-bottom:6px;">리포트 생성</button>
+        <button onclick="exportReportToClipboard()" style="width:100%; padding:10px; background:var(--card); color:var(--blue); border:1px solid var(--blue); border-radius:var(--r); font-size:13px; font-weight:600; cursor:pointer; margin-bottom:12px;">스프레드시트로 복사</button>
+        <div id="reportArea"><div class="collect-empty">기간을 선택하고 리포트를 생성하세요</div></div>
       </div>
     </div>
 
@@ -728,10 +766,7 @@ const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBh
 
 // ★ 더미데이터 모드: true면 Supabase 없이 화면/로직 테스트 가능
 //    실제 배포 전에 false로 바꾸세요.
-const DUMMY_MODE = false;
 
-// GitHub Pages: Supabase 직접 연동 모드 (SHEET_MODE 대신)
-const SHEET_MODE = false;
 const SUPABASE_MODE = true;
 
 const PHOTO_SEARCH_BASE_URL = 'https://admin.a-bly.com/mobile/goods';
@@ -752,50 +787,7 @@ try {
 }
 
 // ============================================================
-// 더미 데이터 (DUMMY_MODE에서만 사용)
-// ============================================================
-const DUMMY_SCAN_DATA = {
-  // 기존 값 있는 SKU (완폴리 아님)
-  'S1702693': {
-    option_code: 'S1702693', option_name: '와인/FREE', location_code: 'A10-2-1', tier: 4,
-    sku: '27574-68', product_name: '니트 가디건', category_large: '아우터', category_small: '니트',
-    is_wanpoly: false, poly_size: '2호', pcs_per_bag_3tier: 30, pcs_per_bag_4tier: 24,
-    pcs_for_current_tier: 24, confirm_count: 3, data_source: 'migrated',
-    defect_hint_text: '보풀/오염 주의', defect_hint_severity: 2
-  },
-  // 3단 로케이션 (D존)
-  'S2772486': {
-    option_code: 'S2772486', option_name: '블랙/FREE', location_code: 'D37-1-4', tier: 3,
-    sku: '27574-165', product_name: '기모 원피스', category_large: '원피스', category_small: '원피스',
-    is_wanpoly: false, poly_size: '3호', pcs_per_bag_3tier: 15, pcs_per_bag_4tier: 20,
-    pcs_for_current_tier: 15, confirm_count: 1, data_source: 'migrated',
-    defect_hint_text: null, defect_hint_severity: null
-  },
-  // 완폴리 상품
-  'S2725395': {
-    option_code: 'S2725395', option_name: '핑크/FREE', location_code: 'J35-2-3', tier: 4,
-    sku: '26766-561', product_name: '완폴리 블라우스', category_large: '상의', category_small: '블라우스',
-    is_wanpoly: true, poly_size: null, pcs_per_bag_3tier: null, pcs_per_bag_4tier: null,
-    pcs_for_current_tier: null, confirm_count: 1, data_source: 'migrated',
-    defect_hint_text: null, defect_hint_severity: null
-  },
-  // 신규 SKU (값 없음)
-  'S9999999': {
-    option_code: 'S9999999', option_name: '네이비/FREE', location_code: 'B35-4-1', tier: 4,
-    sku: '99999-1', product_name: '신규 테스트 상품', category_large: '상의', category_small: '니트',
-    is_wanpoly: false, poly_size: null, pcs_per_bag_3tier: null, pcs_per_bag_4tier: null,
-    pcs_for_current_tier: null, confirm_count: 1, data_source: 'worker_input',
-    defect_hint_text: null, defect_hint_severity: null
-  }
-};
 
-// 더미 재고(옵션코드 단위) — DUMMY_MODE 테스트용. 재고DB 구조 반영
-const DUMMY_STOCK = {
-  'S1702693': { stock: 42, location_code: 'A10-2-1', sku: '27574-68', option_name: '와인/FREE', product_name: '니트 가디건', category_small: '니트' },
-  'S2772486': { stock: 3,  location_code: 'D37-1-4', sku: '27574-165', option_name: '블랙/FREE', product_name: '기모 원피스', category_small: '원피스' },
-  'S2725395': { stock: 0,  location_code: 'J35-2-3', sku: '26766-561', option_name: '핑크/FREE', product_name: '블라우스', category_small: '블라우스' },
-  'S9999999': { stock: 15, location_code: 'B35-4-1', sku: '99999-1', option_name: '네이비/FREE', product_name: '신규 테스트 상품', category_small: '니트' }
-};
 
 // ============================================================
 // 상태
@@ -903,7 +895,7 @@ function doSelectTable(tableCode, floor) {
   input.placeholder = '소테이블을 선택하세요';
   document.getElementById('scanHint').textContent = '소테이블을 선택한 뒤 스캔하세요';
 
-  if (SHEET_MODE && !sheetIndex) {
+  if (!sheetIndex) {
     preloadSheetIndex().catch((e) => { console.error('데이터 로딩 실패:', e); });
   }
 }
@@ -1078,11 +1070,14 @@ function openAdmin() {
 function switchAdminTab(tab) {
   document.querySelectorAll('.admin-tab').forEach(t => t.classList.toggle('active', t.dataset.atab === tab));
   document.getElementById('adminTabDashboard').classList.toggle('hidden', tab !== 'dashboard');
+  document.getElementById('adminTabLive').classList.toggle('hidden', tab !== 'live');
+  document.getElementById('adminTabReport').classList.toggle('hidden', tab !== 'report');
   document.getElementById('adminTabRequests').classList.toggle('hidden', tab !== 'requests');
   document.getElementById('adminTabQr').classList.toggle('hidden', tab !== 'qr');
   document.getElementById('adminTabSync').classList.toggle('hidden', tab !== 'sync');
   if (tab === 'requests') loadAdminRequests();
   if (tab === 'dashboard') { document.getElementById('dashboardLogArea').style.display = 'none'; }
+  if (tab === 'live') loadLiveStatus();
 }
 
 function openQrPage() {
@@ -1296,6 +1291,235 @@ function closeDashLog() {
   document.getElementById('dashboardLogArea').style.display = 'none';
 }
 
+// ===== 실시간 작업 현황 =====
+async function loadLiveStatus() {
+  var area = document.getElementById('liveStatusArea');
+  area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
+  try {
+    var rows = await sbFetch('current_work?select=sub_table,sku,option_name,product_name,work_shift,scanned_at,invoice_type&order=sub_table');
+    if (!rows.length) { area.innerHTML = '<div class="collect-empty">데이터 없음</div>'; return; }
+
+    // 층별 그룹핑
+    var floors = { '3층': {}, '2층': {} };
+    rows.forEach(function(r) {
+      var parts = (r.sub_table || '').split('-');
+      if (parts.length < 3) return;
+      var floor = parts[0];
+      var table = parts[0] + '-' + parts[1];
+      var slot = parseInt(parts[2]);
+      if (!floors[floor]) floors[floor] = {};
+      if (!floors[floor][table]) floors[floor][table] = {};
+      floors[floor][table][slot] = r;
+    });
+
+    var html = '';
+    ['3층', '2층'].forEach(function(floor) {
+      var tables = Object.keys(floors[floor] || {}).sort();
+      if (!tables.length) return;
+      html += '<div style="font-size:13px; font-weight:700; color:var(--ink-3); margin:12px 0 6px;">' + floor + '</div>';
+      tables.forEach(function(table) {
+        var slots = floors[floor][table];
+        html += '<div style="background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:10px; margin-bottom:6px;">';
+        html += '<div style="font-size:13px; font-weight:700; margin-bottom:6px;">' + table + '</div>';
+        html += '<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:4px;">';
+        for (var i = 1; i <= 8; i++) {
+          var s = slots[i];
+          var hasData = s && s.sku && s.sku !== '';
+          var bg = hasData ? 'var(--blue)' : 'var(--surface)';
+          var color = hasData ? '#fff' : 'var(--ink-mute)';
+          var title = hasData ? s.sku + '\n' + (s.option_name || '') : '대기';
+          html += '<div title="' + title.replace(/"/g, '') + '" style="padding:6px 2px; background:' + bg + '; color:' + color + '; border-radius:4px; text-align:center; font-size:10px; font-weight:600; overflow:hidden; white-space:nowrap; text-overflow:ellipsis;">';
+          html += hasData ? i + ' ' + (s.sku || '').substring(0, 6) : i;
+          html += '</div>';
+        }
+        html += '</div></div>';
+      });
+    });
+
+    // 요약
+    var active = rows.filter(function(r) { return r.sku && r.sku !== ''; });
+    var empty = rows.length - active.length;
+    var summary = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:10px; margin-bottom:8px; text-align:center;">' +
+      '<span style="font-size:14px; font-weight:700;">작업 중 <span style="color:var(--blue);">' + active.length + '</span>개</span>' +
+      '<span style="margin:0 8px; color:var(--ink-mute);">·</span>' +
+      '<span style="font-size:14px; font-weight:700;">대기 <span style="color:var(--ink-mute);">' + empty + '</span>개</span>' +
+    '</div>';
+
+    area.innerHTML = summary + html;
+  } catch(e) {
+    area.innerHTML = '<div class="collect-empty">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+// ===== 주간/월간 리포트 =====
+var reportLogs = [];
+
+(function initReportDates() {
+  var today = new Date();
+  var el1 = document.getElementById('reportFrom');
+  var el2 = document.getElementById('reportTo');
+  if (el1) {
+    var weekAgo = new Date(today); weekAgo.setDate(today.getDate() - 7);
+    el1.value = weekAgo.toISOString().split('T')[0];
+  }
+  if (el2) el2.value = today.toISOString().split('T')[0];
+})();
+
+function setReportRange(range) {
+  var today = new Date();
+  var from, to;
+  if (range === 'week') {
+    var day = today.getDay();
+    from = new Date(today); from.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+    to = today;
+  } else if (range === 'month') {
+    from = new Date(today.getFullYear(), today.getMonth(), 1);
+    to = today;
+  } else if (range === 'lastweek') {
+    var day = today.getDay();
+    var thisMonday = new Date(today); thisMonday.setDate(today.getDate() - (day === 0 ? 6 : day - 1));
+    to = new Date(thisMonday); to.setDate(thisMonday.getDate() - 1);
+    from = new Date(to); from.setDate(to.getDate() - 6);
+  }
+  document.getElementById('reportFrom').value = from.toISOString().split('T')[0];
+  document.getElementById('reportTo').value = to.toISOString().split('T')[0];
+}
+
+async function loadReport() {
+  var area = document.getElementById('reportArea');
+  area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
+  try {
+    var fromStr = document.getElementById('reportFrom').value;
+    var toStr = document.getElementById('reportTo').value;
+    var startDate = new Date(fromStr); startDate.setHours(0,0,0,0);
+    var endDate = new Date(toStr); endDate.setDate(endDate.getDate()+1); endDate.setHours(0,0,0,0);
+
+    reportLogs = await sbFetch('processing_log?select=*&completed_at=gte.' + encodeURIComponent(startDate.toISOString()) + '&completed_at=lt.' + encodeURIComponent(endDate.toISOString()) + '&order=completed_at.desc&limit=50000');
+
+    if (!reportLogs.length) { area.innerHTML = '<div class="collect-empty">해당 기간에 완료된 작업이 없습니다</div>'; return; }
+
+    // 일별 집계
+    var dayMap = {};
+    var shiftTotals = {};
+    var tableTotals = {};
+    var catTotals = {};
+    var totalSec = 0, timedCount = 0;
+
+    reportLogs.forEach(function(log) {
+      var day = log.completed_at ? log.completed_at.split('T')[0] : 'unknown';
+      if (!dayMap[day]) dayMap[day] = { count: 0, pcs: 0, options: new Set() };
+      dayMap[day].count += 1;
+      dayMap[day].pcs += (log.actual_qty || log.expected_qty || 0);
+      dayMap[day].options.add(log.sku);
+
+      var shift = log.work_shift || '미지정';
+      if (!shiftTotals[shift]) shiftTotals[shift] = { count: 0, pcs: 0 };
+      shiftTotals[shift].count += 1;
+      shiftTotals[shift].pcs += (log.actual_qty || log.expected_qty || 0);
+
+      var parts = (log.sub_table || '').split('-');
+      var tableKey = parts.length >= 2 ? parts[0] + '-' + parts[1] : log.sub_table;
+      if (!tableTotals[tableKey]) tableTotals[tableKey] = { count: 0, pcs: 0 };
+      tableTotals[tableKey].count += 1;
+      tableTotals[tableKey].pcs += (log.actual_qty || log.expected_qty || 0);
+
+      var cat = log.invoice_type || '미분류';
+      if (!catTotals[cat]) catTotals[cat] = { count: 0, pcs: 0 };
+      catTotals[cat].count += 1;
+      catTotals[cat].pcs += (log.actual_qty || log.expected_qty || 0);
+
+      if (log.scanned_at && log.completed_at) {
+        var sec = (new Date(log.completed_at) - new Date(log.scanned_at)) / 1000;
+        if (sec > 0 && sec < 3600) { totalSec += sec; timedCount += 1; }
+      }
+    });
+
+    var totalOptions = new Set(reportLogs.map(function(l) { return l.sku; })).size;
+    var totalPcs = reportLogs.reduce(function(s, l) { return s + (l.actual_qty || l.expected_qty || 0); }, 0);
+    var avgTime = timedCount > 0 ? formatSeconds(Math.round(totalSec / timedCount)) : '-';
+
+    // 총합
+    var html = '<div style="background:var(--blue-soft); border-radius:var(--r); padding:12px; margin-bottom:12px; text-align:center;">' +
+      '<div style="font-size:12px; color:var(--blue); font-weight:600;">' + fromStr + ' ~ ' + toStr + '</div>' +
+      '<div style="font-size:20px; font-weight:800; margin-top:4px;">' + totalOptions + '종 · ' + totalPcs + ' pcs · ' + reportLogs.length + '건</div>' +
+      '<div style="font-size:12px; color:var(--ink-mute); margin-top:2px;">평균 작업시간: ' + avgTime + '</div>' +
+    '</div>';
+
+    // 조별 요약
+    html += '<div style="font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:4px;">조별</div>';
+    html += '<div style="display:flex; gap:6px; margin-bottom:12px;">';
+    Object.keys(shiftTotals).sort().forEach(function(s) {
+      var si = shiftTotals[s];
+      html += '<div style="flex:1; background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:8px; text-align:center;">' +
+        '<div style="font-size:11px; color:var(--ink-mute); font-weight:600;">' + s + '</div>' +
+        '<div style="font-size:14px; font-weight:800;">' + si.count + '건</div>' +
+        '<div style="font-size:11px; color:var(--ink-3);">' + si.pcs + ' pcs</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // 카테고리별
+    html += '<div style="font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:4px;">카테고리별</div>';
+    html += '<div style="display:flex; gap:6px; flex-wrap:wrap; margin-bottom:12px;">';
+    Object.keys(catTotals).sort().forEach(function(cat) {
+      var ci = catTotals[cat];
+      html += '<div style="flex:1; min-width:45%; background:var(--card); border:1px solid var(--ring); border-radius:var(--r); padding:8px; text-align:center;">' +
+        '<div style="font-size:11px; color:var(--ink-mute); font-weight:600;">' + cat + '</div>' +
+        '<div style="font-size:14px; font-weight:800;">' + ci.count + '건</div>' +
+        '<div style="font-size:11px; color:var(--ink-3);">' + ci.pcs + ' pcs</div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // 일별 추이
+    html += '<div style="font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:4px;">일별</div>';
+    html += '<div style="display:flex; flex-direction:column; gap:4px; margin-bottom:12px;">';
+    Object.keys(dayMap).sort().forEach(function(day) {
+      var d = dayMap[day];
+      html += '<div class="collect-item" style="padding:8px 12px;">' +
+        '<div class="ci-left">' +
+          '<div class="ci-sku">' + day + '</div>' +
+          '<div class="ci-sub">' + d.options.size + '종 · ' + d.count + '건</div>' +
+        '</div>' +
+        '<div class="ci-right"><div class="ci-loc">' + d.pcs + '</div><div class="ci-stock">pcs</div></div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    // 테이블별
+    html += '<div style="font-size:12px; font-weight:700; color:var(--ink-3); margin-bottom:4px;">테이블별</div>';
+    html += '<div style="display:flex; flex-direction:column; gap:4px;">';
+    Object.keys(tableTotals).sort().forEach(function(key) {
+      var t = tableTotals[key];
+      html += '<div class="collect-item" style="padding:8px 12px;">' +
+        '<div class="ci-left"><div class="ci-sku">' + key + '</div><div class="ci-sub">' + t.count + '건</div></div>' +
+        '<div class="ci-right"><div class="ci-loc">' + t.pcs + '</div><div class="ci-stock">pcs</div></div>' +
+      '</div>';
+    });
+    html += '</div>';
+
+    area.innerHTML = html;
+  } catch(e) {
+    area.innerHTML = '<div class="collect-empty">불러오기 실패: ' + e.message + '</div>';
+  }
+}
+
+function exportReportToClipboard() {
+  if (!reportLogs.length) { showToast('리포트 데이터가 없습니다'); return; }
+  var header = '날짜\t옵션코드\tSKU\t옵션명\t실입고수량\t작업테이블\t작업시작\t작업완료\t조\t카테고리';
+  var rows = reportLogs.map(function(log) {
+    var day = log.completed_at ? log.completed_at.split('T')[0] : '';
+    var scanTime = '', completeTime = '';
+    try { scanTime = log.scanned_at ? new Date(log.scanned_at).toLocaleString('ko-KR') : ''; } catch(e) {}
+    try { completeTime = log.completed_at ? new Date(log.completed_at).toLocaleString('ko-KR') : ''; } catch(e) {}
+    return [day, log.option_code||'', log.sku||'', log.option_name||'', log.actual_qty||0, log.sub_table||'', scanTime, completeTime, log.work_shift||'', log.invoice_type||''].join('\t');
+  });
+  var tsv = header + '\n' + rows.join('\n');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(tsv).then(function() { showToast('클립보드에 복사됨'); }).catch(function() { fallbackCopy(tsv); });
+  } else { fallbackCopy(tsv); }
+}
+
 function setAdminFilter(f) {
   adminFilter = f;
   document.querySelectorAll('.admin-filter-btn').forEach(b => b.classList.toggle('active', b.dataset.af === f));
@@ -1351,23 +1575,12 @@ async function callAdminGS(fnName, arg) {
       return { ok: true };
     }
   }
-  // Apps Script fallback
-  return new Promise((resolve, reject) => {
-    const r = google.script.run.withSuccessHandler(resolve).withFailureHandler(reject);
-    if (fnName === 'get') r.qualityGetChangeRequests();
-    else if (fnName === 'approve') r.qualityApproveChangeRequest(arg);
-    else if (fnName === 'reject') r.qualityRejectChangeRequest(arg);
-  });
+  return { ok: false, error: 'Supabase 미연결' };
 }
 
 async function loadAdminRequests() {
   const area = document.getElementById('adminRequestsArea');
   area.innerHTML = '<div class="collect-empty">불러오는 중...</div>';
-  if (DUMMY_MODE) {
-    adminAllRequests = DUMMY_REQUESTS || [];
-    renderAdminRequests();
-    return;
-  }
   try {
     adminAllRequests = await callAdminGS('get');
     if (!Array.isArray(adminAllRequests)) adminAllRequests = [];
@@ -2094,9 +2307,7 @@ function enterCollectMode() {
   document.getElementById('collectListArea').innerHTML = '<div class="collect-empty">데이터 불러오는 중...</div>';
 
   const afterLoad = () => { buildCollectLists(); switchPrio(currentPrio); };
-  if (DUMMY_MODE) {
-    afterLoad();
-  } else if (SUPABASE_MODE || SHEET_MODE) {
+  if (SUPABASE_MODE) {
     if (sheetIndex) { afterLoad(); }
     else {
       preloadSheetIndex().then(afterLoad).catch((e) => {
@@ -2177,7 +2388,7 @@ function isCollected(item) {
 // 재고DB 전체를 순회해 우선순위 3그룹으로 분류(로케이션 순 정렬, 완료건도 포함)
 function buildCollectLists() {
   collectGroups = { 1: [], 2: [], 3: [] };
-  const stockMap = (DUMMY_MODE ? DUMMY_STOCK : (sheetIndex ? sheetIndex.stockByOption : {})) || {};
+  const stockMap = (sheetIndex ? sheetIndex.stockByOption : {}) || {};
 
   Object.keys(stockMap).forEach(oc => {
     const s = stockMap[oc];
@@ -2549,7 +2760,7 @@ async function submitCollect() {
   if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
 
   try {
-    if (SUPABASE_MODE || SHEET_MODE) {
+    if (SUPABASE_MODE) {
       const payload = {
         sku: collectScan.sku,
         categorySmall: collectScan.category_small || ''
@@ -2595,7 +2806,7 @@ async function submitCollect() {
 async function loadTodayStat() {
   if (!currentTable) return;
 
-  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
+  if (!sbClient) {
     // 더미모드: 세션 동안 로컬 카운트만 표시
     document.getElementById('todayPcs').textContent = dummyTodayPcs;
     document.getElementById('todayCount').textContent = dummyTodayCount;
@@ -2635,42 +2846,6 @@ function parseOptionCode(raw) {
   return raw;
 }
 
-// google.script.run을 Promise로 감싸는 헬퍼 (옵션코드 조회 전용)
-function callSheetLookup(optionCode) {
-  return new Promise((resolve, reject) => {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) {
-      reject(new Error('google.script.run을 사용할 수 없습니다(웹앱 배포 환경에서만 동작)'));
-      return;
-    }
-    google.script.run
-      .withSuccessHandler(resolve)
-      .withFailureHandler(reject)
-      .qualityLookupByOptionCode(optionCode);
-  });
-}
-
-// 신규 SKU 값을 시트에 저장(google.script.run → qualitySaveNewSku)
-async function saveNewSkuToSheet(payload) {
-  if (SUPABASE_MODE) {
-    const sku = payload.sku;
-    let catSmall = payload.categorySmall || '';
-    if (!catSmall && sheetIndex && sheetIndex.categoryBySku && sheetIndex.categoryBySku[sku])
-      catSmall = sheetIndex.categoryBySku[sku].category_small || '';
-    if (payload.polySize)
-      await sbPost('sku_poly?on_conflict=sku', { sku, category_small: catSmall, poly_size: payload.polySize, updated_at: new Date().toISOString() });
-    if (payload.pcs != null && payload.tier) {
-      const inputPcs = Number(payload.pcs), otherPcs = convertPcs(inputPcs, payload.tier);
-      const row = { sku, category_small: catSmall, updated_at: new Date().toISOString() };
-      if (payload.tier === 4) { row.pcs_4tier = inputPcs; if (otherPcs != null) row.pcs_3tier = otherPcs; }
-      else { row.pcs_3tier = inputPcs; if (otherPcs != null) row.pcs_4tier = otherPcs; }
-      await sbPost('sku_bag?on_conflict=sku', row);
-    }
-    return { ok: true };
-  }
-  return new Promise((resolve, reject) => {
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualitySaveNewSku(payload);
-  });
-}
 
 async function saveChangeRequestToSheet(payload) {
   if (SUPABASE_MODE) {
@@ -2682,9 +2857,7 @@ async function saveChangeRequestToSheet(payload) {
     });
     return { ok: true };
   }
-  return new Promise((resolve, reject) => {
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualitySaveChangeRequest(payload);
-  });
+  return { ok: false, error: 'Supabase 미연결' };
 }
 
 function pushToSubTable(payload) {
@@ -2699,9 +2872,7 @@ function pushToSubTable(payload) {
       scanned_at: new Date().toISOString()
     });
   }
-  return new Promise((resolve, reject) => {
-    google.script.run.withSuccessHandler(resolve).withFailureHandler(reject).qualityPushToSubTable(payload);
-  });
+  return Promise.reject(new Error('Supabase 미연결'));
 }
 
 // 소테이블에 스캔 정보 전송 — 단일/다중 모드 지원
@@ -2921,11 +3092,7 @@ function preloadSheetIndex() {
     return sheetIndexLoading;
   }
 
-  // Apps Script fallback
-  sheetIndexLoading = new Promise((resolve, reject) => {
-    if (typeof google === 'undefined' || !google.script || !google.script.run) { reject(new Error('google.script.run 사용 불가')); return; }
-    google.script.run.withSuccessHandler((idx) => { sheetIndex = idx; resolve(idx); }).withFailureHandler(reject).qualityGetFullIndex();
-  });
+  sheetIndexLoading = Promise.reject(new Error('Supabase 미연결'));
   return sheetIndexLoading;
 }
 
@@ -3101,12 +3268,7 @@ async function handleBarcodeScan(rawBarcode) {
 
   let data, error;
 
-  if (DUMMY_MODE) {
-    // 더미모드: 로컬 데이터에서 조회
-    data = DUMMY_SCAN_DATA[optionCode] || null;
-    error = null;
-  } else if (SUPABASE_MODE || SHEET_MODE) {
-    // Supabase모드/시트모드: 프리로드된 로컬 인덱스에서 즉시 조회
+  {
     try {
       if (!sheetIndex) await preloadSheetIndex();
       data = lookupLocal(optionCode);
@@ -3115,16 +3277,6 @@ async function handleBarcodeScan(rawBarcode) {
       data = null;
       error = e;
     }
-  } else if (sbClient) {
-    const res = await sbClient
-      .from('v_barcode_scan_result')
-      .select('*')
-      .eq('option_code', optionCode)
-      .maybeSingle();
-    data = res.data;
-    error = res.error;
-  } else {
-    error = new Error('데이터 소스가 설정되지 않았습니다');
   }
 
   if (error) {
@@ -3369,7 +3521,7 @@ async function renderNewSkuScreen(data) {
 
   // 동일 소카 최근 평균값 힌트
   const hintEl = document.getElementById('newCategoryHint');
-  if (data.category_small && !DUMMY_MODE && !SHEET_MODE && sbClient) {
+  if (data.category_small && sbClient) {
     const { data: siblings, error } = await sbClient
       .from('sku_master')
       .select('pcs_per_bag_3tier, pcs_per_bag_4tier')
@@ -3422,7 +3574,7 @@ async function submitNewSku() {
   const tier = currentScan.tier;
   const sku = currentScan.sku;
 
-  if (SUPABASE_MODE || SHEET_MODE) {
+  if (SUPABASE_MODE) {
     const btn = document.querySelector('#screenNewSku .btn-primary');
     if (btn) { btn.disabled = true; btn.textContent = '저장 중...'; }
     try {
@@ -3465,7 +3617,7 @@ async function submitNewSku() {
     return;
   }
 
-  if (DUMMY_MODE || !sbClient) {
+  if (!sbClient) {
     await insertProcessingLog({ sku, option_code: currentScan.option_code, tier_used: tier, pcs: pcsValue, is_wanpoly: false });
     showToast('[더미] 신규 값이 등록되었습니다');
     const otherPcsDummy = convertPcs(pcsValue, tier);
@@ -3547,7 +3699,7 @@ async function submitNewSku() {
 // 공통: 처리 로그 저장
 // ============================================================
 async function insertProcessingLog({ sku, option_code, tier_used, pcs, is_wanpoly }) {
-  if (DUMMY_MODE || SHEET_MODE || !sbClient) {
+  if (!sbClient) {
     // 더미모드: 로컬 카운터만 증가
     dummyTodayPcs += (pcs || 0);
     dummyTodayCount += 1;
